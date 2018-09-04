@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: lnd
+  name: lnd
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.service: lnd
+    spec:
+      containers:
+      - command:
+        - ./start-lnd.sh
+        env:
+        - name: CHAIN
+        - name: DEBUG
+        - name: NETWORK
+        - name: RPCPASS
+        - name: RPCUSER
+        image: lnd
+        name: lnd
+        resources: {}
+        volumeMounts:
+        - mountPath: /rpc
+          name: shared
+        - mountPath: /root/.lnd/
+          name: shared
+      restartPolicy: Always
+      volumes:
+      - name: shared
+        persistentVolumeClaim:
+          claimName: shared
+      - name: shared
+        persistentVolumeClaim:
+          claimName: shared
+status: {}

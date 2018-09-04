@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: ltcd
+  name: ltcd
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.service: ltcd
+    spec:
+      containers:
+      - command:
+        - ./start-ltcd.sh
+        env:
+        - name: DEBUG
+        - name: MINING_ADDRESS
+        - name: NETWORK
+        - name: RPCPASS
+        - name: RPCUSER
+        image: ltcd
+        name: ltcd
+        resources: {}
+        volumeMounts:
+        - mountPath: /rpc
+          name: shared
+        - mountPath: /data
+          name: litecoin
+      restartPolicy: Always
+      volumes:
+      - name: shared
+        persistentVolumeClaim:
+          claimName: shared
+      - name: litecoin
+        persistentVolumeClaim:
+          claimName: litecoin
+status: {}

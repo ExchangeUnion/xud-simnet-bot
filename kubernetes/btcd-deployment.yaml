@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: btcd
+  name: btcd
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: btcd
+    spec:
+      containers:
+      - command:
+        - ./start-btcd.sh
+        env:
+        - name: DEBUG
+        - name: MINING_ADDRESS
+        - name: NETWORK
+        - name: RPCPASS
+        - name: RPCUSER
+        image: btcd
+        name: btcd
+        resources: {}
+        volumeMounts:
+        - mountPath: /rpc
+          name: shared
+        - mountPath: /data
+          name: bitcoin
+      restartPolicy: Always
+      volumes:
+      - name: shared
+        persistentVolumeClaim:
+          claimName: shared
+      - name: bitcoin
+        persistentVolumeClaim:
+          claimName: bitcoin
+status: {}
