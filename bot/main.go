@@ -131,7 +131,7 @@ func checkErr(err error) {
 
 func cancelOldOrders(node xudrpc.XudClient, ctx context.Context, orders []*xudrpc.Order) {
 	for _, order := range orders {
-		if order.CreatedAt > (time.Now().UnixNano() / int64(time.Millisecond)) {
+		if order.CreatedAt > (time.Now().UnixNano() / int64(time.Millisecond) - 24*3600) {
 			log.Infoln("Cancel the last order with ID: " + order.GetId() + "\n")
 			canceledOrder, err := node.CancelOrder(ctx, &xudrpc.CancelOrderRequest{OrderId: order.Id, PairId: "LTC/BTC"})
 			checkErr(err)
