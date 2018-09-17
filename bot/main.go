@@ -31,7 +31,6 @@ func main() {
 	logFormat.TimestampFormat = "2006-01-02 15:04:05"
 	logFormat.FullTimestamp = true
 	log.SetFormatter(logFormat)
-
 	projectID, err := metadata.ProjectID()
 	if err == nil {
 		ctx := context.Background()
@@ -72,7 +71,7 @@ func main() {
 	if conres != nil {
 		log.Println(conres)
 	} else {
-		log.Warningln("Nodes are connected to eachother successfully! \n")
+		log.Warningln("Nodes are connected to each other successfully! \n")
 	}
 	conres, err = node.Connect(ctx, &xudrpc.ConnectRequest{NodeUri: *nodeAddr3})
 	sts, ok = status.FromError(err)
@@ -82,7 +81,7 @@ func main() {
 	if conres != nil {
 		log.Println(conres)
 	} else {
-		log.Warningln("Nodes  are connected to eachother successfully! \n")
+		log.Warningln("Nodes  are connected to each other successfully! \n")
 	}
 	//Listen to PeerOrder & Swap Streams
 	go listenPeerOrders(node)
@@ -91,35 +90,33 @@ func main() {
 	log.Infoln("Starting Test Trades \n")
 	//Indefinite
 	for {
-		for i := 0; i < 10; i++ {
-			log.Infoln("Checking orders on connected nodes: \n")
-			nodeOrders, err := node.GetOrders(ctx, &xudrpc.GetOrdersRequest{PairId: "LTC/BTC"})
+		log.Infoln("Checking orders on connected nodes: \n")
+		nodeOrders, err := node.GetOrders(ctx, &xudrpc.GetOrdersRequest{PairId: "LTC/BTC", IncludeOwnOrders: true})
+		checkErr(err)
+		log.Println(nodeOrders)
+		orders := nodeOrders.GetOrders()
+		//If only one buy order place one more
+		if len(orders["LTC/BTC"].BuyOrders) <= 1 {
+			log.Infoln("Placing a buy order \n")
+			buyOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 200, PairId: "LTC/BTC", Quantity: 0.001, OrderId: uuid.NewV1().String()})
 			checkErr(err)
-			log.Println(nodeOrders)
-
-			//If only one buy order place one more
-			if len(nodeOrders.OwnOrders.GetBuyOrders()) <= 1 {
-				log.Infoln("Placing a buy order \n")
-				buyOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "LTC/BTC", Quantity: 0.001, OrderId: uuid.NewV1().String()})
-				checkErr(err)
-				log.Println(buyOrder)
-			}
-
-			//If only one sell order place one more
-			if len(nodeOrders.OwnOrders.GetSellOrders()) <= 1 {
-				log.Infoln("Placing a sell order order \n")
-				sellOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "LTC/BTC", Quantity: -0.001, OrderId: uuid.NewV1().String()})
-				checkErr(err)
-				log.Println(sellOrder)
-			}
-
-			// Cancel the order if the order is not fullfilled in the last 24hrs
-			cancelOldOrders(node, ctx, nodeOrders.OwnOrders.SellOrders)
-			// Cancel the order if the order is not fullfilled in the last 24hrs
-			cancelOldOrders(node, ctx, nodeOrders.OwnOrders.BuyOrders)
-
-			time.Sleep(1000)
+			log.Println(buyOrder)
+			println()
 		}
+
+		//If only one sell order place one more
+		if len(orders["LTC/BTC"].GetSellOrders()) <= 1 {
+			log.Infoln("Placing a sell order order \n")
+			sellOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "LTC/BTC", Quantity: -0.01, OrderId: uuid.NewV1().String()})
+			checkErr(err)
+			log.Println(sellOrder)
+			println()
+		}
+		// Cancel the order if the order is not fullfilled in the last 24hrs
+		cancelOldOrders(ctx, node, orders["LTC/BTC"].GetSellOrders())
+		// Cancel the order if the order is not fullfilled in the last 24hrs
+		cancelOldOrders(ctx, node, orders["LTC/BTC"].GetBuyOrders())
+		time.Sleep(time.Second * 20)
 	}
 }
 
@@ -129,13 +126,14 @@ func checkErr(err error) {
 	}
 }
 
-func cancelOldOrders(node xudrpc.XudClient, ctx context.Context, orders []*xudrpc.Order) {
+func cancelOldOrders(ctx context.Context, node xudrpc.XudClient, orders []*xudrpc.Order) {
 	for _, order := range orders {
-		if order.CreatedAt > (time.Now().UnixNano() / int64(time.Millisecond) - 24*3600) {
+		createdAt := time.Unix(order.CreatedAt, 0)
+		if (time.Now().Sub(createdAt).Hours() / 24) > 1 {
 			log.Infoln("Cancel the last order with ID: " + order.GetId() + "\n")
-			canceledOrder, err := node.CancelOrder(ctx, &xudrpc.CancelOrderRequest{OrderId: order.Id, PairId: "LTC/BTC"})
+			_, err := node.CancelOrder(ctx, &xudrpc.CancelOrderRequest{OrderId: order.Id})
 			checkErr(err)
-			if canceledOrder.Canceled {
+			if err == nil {
 				log.Println("Order: " + order.Id + " Successfully cancelled!")
 			} else {
 				log.Warningln("Order: " + order.Id + " couldn't be cancelled!")
