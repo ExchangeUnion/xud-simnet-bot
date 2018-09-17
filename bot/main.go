@@ -27,6 +27,10 @@ func main() {
 	println(`
 	  ExchangeUnion Trading Tests Bot ====> https://exchangeunion.com/
 	`)
+	logFormat := new(log.TextFormatter)
+	logFormat.TimestampFormat = "2006-01-02 15:04:05"
+	logFormat.FullTimestamp = true
+	log.SetFormatter(logFormat)
 
 	projectID, err := metadata.ProjectID()
 	if err == nil {
@@ -81,8 +85,8 @@ func main() {
 		log.Warningln("Nodes  are connected to eachother successfully! \n")
 	}
 	//Listen to PeerOrder & Swap Streams
-	//go listenPeerOrders(node)
-	//go listenSwaps(node)
+	go listenPeerOrders(node)
+	go listenSwaps(node)
 
 	log.Infoln("Starting Test Trades \n")
 	//Indefinite
