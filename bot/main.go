@@ -96,13 +96,13 @@ func main() {
 		log.Println(nodeOrders)
 		orders := nodeOrders.GetOrders()
 		//If only one buy order place one more
-		if len(orders["LTC/BTC"].BuyOrders) <= 1 {
-			log.Infoln("Placing a buy order \n")
-			buyOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 200, PairId: "LTC/BTC", Quantity: 0.001, OrderId: uuid.NewV1().String()})
-			checkErr(err)
-			log.Println(buyOrder)
-			println()
-		}
+		// if len(orders["LTC/BTC"].BuyOrders) <= 1 {
+		// 	log.Infoln("Placing a buy order \n")
+		// 	buyOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 200, PairId: "LTC/BTC", Quantity: 0.001, OrderId: uuid.NewV1().String()})
+		// 	checkErr(err)
+		// 	log.Println(buyOrder)
+		// 	println()
+		// }
 
 		//If only one sell order place one more
 		if len(orders["LTC/BTC"].GetSellOrders()) <= 1 {
@@ -116,7 +116,7 @@ func main() {
 		cancelOldOrders(ctx, node, orders["LTC/BTC"].GetSellOrders())
 		// Cancel the order if the order is not fullfilled in the last 24hrs
 		cancelOldOrders(ctx, node, orders["LTC/BTC"].GetBuyOrders())
-		time.Sleep(time.Second * 20)
+		time.Sleep(time.Second * 5)
 	}
 }
 
