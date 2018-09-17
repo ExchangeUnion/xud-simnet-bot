@@ -33,7 +33,7 @@ func main() {
 		ctx := context.Background()
 		stackdriverlogs, err := logging.NewClient(ctx, projectID)
 		if err != nil {
-			log.Fatalf("Failed to create client: %v", err)
+			log.Fatalf("Failed to create stackdriver logging client: %v", err)
 		}
 		h := stackdriver.New(stackdriverlogs, "xud-trading-bot")
 		log.AddHook(h)
@@ -42,54 +42,25 @@ func main() {
 	flag.Parse()
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
-	nodeOnegRPCURI, err := url.Parse("//" + *nodeAddr1)
+	nodegRPCURI, err := url.Parse("//" + *nodeAddr1)
 	checkErr(err)
-	nodeTwogRPCURI, err := url.Parse("//" + *nodeAddr2)
-	checkErr(err)
-	nodeThreegRPCURI, err := url.Parse("//" + *nodeAddr3)
-	checkErr(err)
-	conn1, err := grpc.Dial(nodeOnegRPCURI.Hostname()+":8886", opts...)
+	conn, err := grpc.Dial(nodegRPCURI.Hostname()+":8886", opts...)
 	if err != nil {
-		log.Fatalf("failed to connect with node1: %v", err)
+		log.Fatalf("Failed to connect with node: %v", err)
 	}
-	defer conn1.Close()
-	conn2, err := grpc.Dial(nodeTwogRPCURI.Hostname()+":8886", opts...)
-	if err != nil {
-		log.Fatalf("failed to connect with node2: %v", err)
-	}
-	defer conn2.Close()
-	conn3, err := grpc.Dial(nodeThreegRPCURI.Hostname()+":8886", opts...)
-	if err != nil {
-		log.Fatalf("failed to connect with node3: %v", err)
-	}
-	defer conn3.Close()
 	ctx := context.Background()
-	node1 := xudrpc.NewXudClient(conn1)
-	node2 := xudrpc.NewXudClient(conn2)
-	node3 := xudrpc.NewXudClient(conn3)
+	node := xudrpc.NewXudClient(conn)
 
-	log.Println("Trying to Get Nodes Info ---> GetInfo() \n")
+	log.Println("Trying to Get Node Info ---> GetInfo() \n")
 
-	nodeoneinfo, err := node1.GetInfo(ctx, &xudrpc.GetInfoRequest{})
+	nodeoneinfo, err := node.GetInfo(ctx, &xudrpc.GetInfoRequest{})
 	checkErr(err)
-	log.Warningln("Node1 Info: ")
+	log.Warningln("Connected Node Info: ")
 	log.Infoln("Node Version: ", nodeoneinfo.Version)
 	log.Infoln("Node PubKey: ", nodeoneinfo.NodePubKey)
 
-	nodetwoinfo, err := node2.GetInfo(ctx, &xudrpc.GetInfoRequest{})
-	checkErr(err)
-	log.Warningln("Node2 Info:")
-	log.Infoln("Node Version: ", nodetwoinfo.Version)
-	log.Infoln("Node PubKey: ", nodetwoinfo.NodePubKey)
-
-	nodethreeinfo, err := node3.GetInfo(ctx, &xudrpc.GetInfoRequest{})
-	checkErr(err)
-	log.Warningln("Node3 Info:")
-	log.Infoln("Node Version: ", nodethreeinfo.Version)
-	log.Infoln("Node PubKey: ", nodethreeinfo.NodePubKey)
-
-	log.Println("Asking nodes to connect with each other ---> Connect() \n")
-	conres, err := node1.Connect(ctx, &xudrpc.ConnectRequest{NodeUri: *nodeAddr2})
+	log.Println("Asking node to connect with other nodes ---> Connect() \n")
+	conres, err := node.Connect(ctx, &xudrpc.ConnectRequest{NodeUri: *nodeAddr2})
 	sts, ok := status.FromError(err)
 	if !ok && sts.Code().String() != "AlreadyExists" {
 		log.Fatalln(sts.Message())
@@ -97,9 +68,9 @@ func main() {
 	if conres != nil {
 		log.Println(conres)
 	} else {
-		log.Warningln("Nodes 1 & 2 are connected to eachother successfully! \n")
+		log.Warningln("Nodes are connected to eachother successfully! \n")
 	}
-	conres, err = node2.Connect(ctx, &xudrpc.ConnectRequest{NodeUri: *nodeAddr3})
+	conres, err = node.Connect(ctx, &xudrpc.ConnectRequest{NodeUri: *nodeAddr3})
 	sts, ok = status.FromError(err)
 	if !ok && sts.Code().String() != "AlreadyExists" {
 		log.Fatalln(sts.Message())
@@ -107,53 +78,42 @@ func main() {
 	if conres != nil {
 		log.Println(conres)
 	} else {
-		log.Warningln("Nodes 2 & 3 are connected to eachother successfully! \n")
+		log.Warningln("Nodes  are connected to eachother successfully! \n")
 	}
 	//Listen to PeerOrder & Swap Streams
-	go listenPeerOrders(node1)
-	go listenPeerOrders(node2)
-	go listenPeerOrders(node3)
-	go listenSwaps(node1)
-	go listenSwaps(node2)
-	go listenSwaps(node3)
+	//go listenPeerOrders(node)
+	//go listenSwaps(node)
 
 	log.Infoln("Starting Test Trades \n")
 	//Indefinite
 	for {
 		for i := 0; i < 10; i++ {
-			log.Infoln("Placing some test orders \n")
-			firstOrder, err := node1.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "BTC/LTC", Quantity: -50, OrderId: uuid.NewV1().String()})
-			checkErr(err)
-			log.Println(firstOrder)
-			thirdOrder, err := node2.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "BTC/LTC", Quantity: 50, OrderId: uuid.NewV1().String()})
-			checkErr(err)
-			if thirdOrder.Matches != nil {
-				log.Println("We have some order matches: \n")
-				log.Println(thirdOrder.Matches)
-			}
-			if thirdOrder.RemainingOrder != nil {
-				log.Println("Remaining Order Quantity: \n")
-				log.Println(thirdOrder.RemainingOrder)
-			}
-			secondOrder, err := node1.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "BTC/LTC", Quantity: -50, OrderId: uuid.NewV1().String()})
-			checkErr(err)
-			log.Println(secondOrder)
-			log.Println("")
-			log.Infoln("Cancel the last order with ID: " + secondOrder.RemainingOrder.GetId() + "\n")
-			cancelOrder, err := node1.CancelOrder(ctx, &xudrpc.CancelOrderRequest{OrderId: secondOrder.RemainingOrder.Id, PairId: "BTC/LTC"})
-			checkErr(err)
-			if cancelOrder.Canceled {
-				log.Println("Order: " + secondOrder.RemainingOrder.Id + " Successfully cancelled!")
-			} else {
-				log.Warningln("Order: " + secondOrder.RemainingOrder.Id + " couldn't be cancelled!")
-			}
 			log.Infoln("Checking orders on connected nodes: \n")
-			nodeOneOrders, err := node1.GetOrders(ctx, &xudrpc.GetOrdersRequest{PairId: "BTC/LTC"})
+			nodeOrders, err := node.GetOrders(ctx, &xudrpc.GetOrdersRequest{PairId: "LTC/BTC"})
 			checkErr(err)
-			log.Println(nodeOneOrders)
-			nodeTwoOrders, err := node2.GetOrders(ctx, &xudrpc.GetOrdersRequest{PairId: "BTC/LTC"})
-			checkErr(err)
-			log.Println(nodeTwoOrders)
+			log.Println(nodeOrders)
+
+			//If only one buy order place one more
+			if len(nodeOrders.OwnOrders.GetBuyOrders()) <= 1 {
+				log.Infoln("Placing a buy order \n")
+				buyOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "LTC/BTC", Quantity: 0.001, OrderId: uuid.NewV1().String()})
+				checkErr(err)
+				log.Println(buyOrder)
+			}
+
+			//If only one sell order place one more
+			if len(nodeOrders.OwnOrders.GetSellOrders()) <= 1 {
+				log.Infoln("Placing a sell order order \n")
+				sellOrder, err := node.PlaceOrder(ctx, &xudrpc.PlaceOrderRequest{Price: 2000, PairId: "LTC/BTC", Quantity: -0.001, OrderId: uuid.NewV1().String()})
+				checkErr(err)
+				log.Println(sellOrder)
+			}
+
+			// Cancel the order if the order is not fullfilled in the last 24hrs
+			cancelOldOrders(node, ctx, nodeOrders.OwnOrders.SellOrders)
+			// Cancel the order if the order is not fullfilled in the last 24hrs
+			cancelOldOrders(node, ctx, nodeOrders.OwnOrders.BuyOrders)
+
 			time.Sleep(1000)
 		}
 	}
@@ -161,7 +121,33 @@ func main() {
 
 func checkErr(err error) {
 	if err != nil {
-		log.Fatalln(err)
+		log.Warningln(err)
+	}
+}
+
+func cancelOldOrders(node xudrpc.XudClient, ctx context.Context, orders []*xudrpc.Order) {
+	for _, order := range orders {
+		if order.CreatedAt > (time.Now().UnixNano() / int64(time.Millisecond)) {
+			log.Infoln("Cancel the last order with ID: " + order.GetId() + "\n")
+			canceledOrder, err := node.CancelOrder(ctx, &xudrpc.CancelOrderRequest{OrderId: order.Id, PairId: "LTC/BTC"})
+			checkErr(err)
+			if canceledOrder.Canceled {
+				log.Println("Order: " + order.Id + " Successfully cancelled!")
+			} else {
+				log.Warningln("Order: " + order.Id + " couldn't be cancelled!")
+			}
+		}
+	}
+}
+
+func checkMatches(order xudrpc.PlaceOrderResponse) {
+	if order.Matches != nil {
+		log.Println("We have some order matches: \n")
+		log.Println(order.Matches)
+	}
+	if order.RemainingOrder != nil {
+		log.Println("Remaining Order Quantity: \n")
+		log.Println(order.RemainingOrder)
 	}
 }
 
@@ -175,7 +161,7 @@ func listenPeerOrders(node xudrpc.XudClient) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("%v.SubscribePeerOrders(_) = _, %v", node, err)
+			log.Warnf("%v.SubscribePeerOrders(_) = _, %v", node, err)
 		}
 		log.Warningln("Looks like we have a new peer order: \n")
 		log.Println(peerOrder)
@@ -192,7 +178,7 @@ func listenSwaps(node xudrpc.XudClient) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("%v.SubscribeSwaps(_) = _, %v", node, err)
+			log.Warnf("%v.SubscribeSwaps(_) = _, %v", node, err)
 		}
 		log.Warningln("Looks like we have a swap event: \n")
 		log.Println(swapevent)
