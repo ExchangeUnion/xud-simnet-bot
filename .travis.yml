@@ -1,0 +1,14 @@
+language: go
+
+cache:
+  directories:
+    - "vendor"
+
+go:
+  - "1.10"
+  - "1.11"
+
+script:
+  - make dep
+  - make build
+  - make lint

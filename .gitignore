@@ -1,2 +1,8 @@
-.DS_Store
-bot/vendor/
+# Visual Studio Code config
+.vscode
+
+# Dependency directory
+vendor/
+
+# Compiled binaries
+xud-tests

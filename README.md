@@ -1,17 +1,18 @@
 # xud-tests
-Real world test scripts
+
+Bot for testing trading with XUD
 
 ## Bot Installation & Usage
 
 Requirements:
-* Golang
-* dep (https://github.com/golang/dep)
+
+* Golang version >= 1.11
+* make
 
 Installation:
 
 ```bash
-$ git clone https://github.com/exchangeunion/xud-tests
-$ cd xud-tests
-$ dep ensure
-$ go build .
-$ ./bot -h
+go get -d github.com/ExchangeUnion/xud-tests
+make dep
+make install
+```

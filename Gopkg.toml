@@ -30,14 +30,6 @@
   version = "1.2.0"
 
 [[constraint]]
-  name = "github.com/satori/go.uuid"
-  version = "1.2.0"
-
-[[constraint]]
-  name = "github.com/sirupsen/logrus"
-  version = "1.0.6"
-
-[[constraint]]
   branch = "master"
   name = "golang.org/x/net"
 
@@ -47,7 +39,7 @@
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.14.0"
+  version = "1.15.0"
 
 [prune]
   go-tests = true
