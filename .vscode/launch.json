@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "go",
+            "request": "launch",
+            "name": "Debug",
+            "mode": "auto",
+            "host": "127.0.0.1",
+            "port": 2345,
+            "program": "${workspaceFolder}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "showLog": false
+        }
+    ]
+}
