@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/ExchangeUnion/xud-tests/trading"
 )
 
 func main() {
@@ -21,8 +23,11 @@ func main() {
 	}
 
 	info, _ := xud.GetInfo()
-
 	log.Info("Conntected to XUD node %v version %v", info.NodePubKey, info.Version)
+
+	trading.InitTradingBot(xud)
+
+	select {}
 }
 
 func printError(messages ...interface{}) {

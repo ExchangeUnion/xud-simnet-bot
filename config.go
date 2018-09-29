@@ -65,6 +65,8 @@ func initConfig() error {
 
 	if _, err := os.Stat(cfg.DataDir); os.IsNotExist(err) {
 		err = os.Mkdir(cfg.DataDir, 0700)
+
+		return err
 	}
 
 	return nil

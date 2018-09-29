@@ -24,6 +24,8 @@ endef
 LIST := go list $(PKG)/... | grep -v '/vendor/'
 LINT_LIST = $(shell go list -f '{{.Dir}}' ./...)
 
+XARGS = xargs -L 1
+
 LINT = $(LINT_BIN) \
 	--disable-all \
 	--enable=gofmt \
@@ -59,7 +61,7 @@ install:
 # Utils
 fmt:
 	@$(call print, "Formatting source")
-	$(LIST) | go fmt -x
+	$(LIST) | $(XARGS) go fmt -x
 
 lint: $(LINT_BIN)
 	@$(call print, "Linting source")
