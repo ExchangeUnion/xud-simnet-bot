@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ExchangeUnion/xud-tests/xudclient"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -21,6 +22,8 @@ type config struct {
 	DataDir    string `long:"datadir" short:"d" description:"Data directory for xud-tests"`
 	ConfigPath string `long:"configpath" description:"Path to the config file"`
 	LogPath    string `long:"logpath" description:"Path to the log file"`
+
+	Xud *xudclient.Xud `group:"XUD"`
 
 	Help *helpOptions `group:"Help Options"`
 }
@@ -50,9 +53,7 @@ func initConfig() error {
 		updateDefaultPaths()
 	}
 
-	err := flags.IniParse(cfg.ConfigPath, &cfg)
-
-	if err != nil {
+	if err := flags.IniParse(cfg.ConfigPath, &cfg); err != nil {
 		fmt.Println("Could not find config file:", err)
 	}
 
@@ -63,11 +64,7 @@ func initConfig() error {
 	updateDefaultPaths()
 
 	if _, err := os.Stat(cfg.DataDir); os.IsNotExist(err) {
-		err := os.Mkdir(cfg.DataDir, 0700)
-
-		if err != nil {
-			return err
-		}
+		err = os.Mkdir(cfg.DataDir, 0700)
 	}
 
 	return nil

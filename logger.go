@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/ExchangeUnion/xud-tests/xudclient"
+
 	"github.com/op/go-logging"
 )
 
@@ -23,6 +25,8 @@ func initLogger(logFile string) error {
 		logging.NewLogBackend(os.Stdout, "", 0),
 		logging.NewLogBackend(file, "", 0),
 	)
+
+	xudclient.UseLogger(*log)
 
 	return nil
 }
