@@ -15,6 +15,18 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/jessevdk/go-flags"
+  packages = ["."]
+  revision = "c6ca198ec95c841fdb89fc0de7496fed11ab854e"
+  version = "v1.4.0"
+
+[[projects]]
+  name = "github.com/op/go-logging"
+  packages = ["."]
+  revision = "b2cb9fa56473e98db8caba80237377e83fe44db5"
+  version = "v1"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = [
@@ -100,6 +112,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e5f5ec5b1e24c6a5651b112d59596ced648f2d9d3bd109ca33be68d69acb733f"
+  inputs-digest = "343831a157dc931f18f31cd16a2cf2afca66b92b45d0f9a62e4a30a85061ca33"
   solver-name = "gps-cdcl"
   solver-version = 1

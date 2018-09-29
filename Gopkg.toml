@@ -44,3 +44,11 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/op/go-logging"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/jessevdk/go-flags"
+  version = "1.4.0"
