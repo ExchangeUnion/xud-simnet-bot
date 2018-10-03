@@ -21,7 +21,12 @@ func InitTradingBot(xudclient *xudclient.Xud) {
 
 	go func() {
 		log.Debug("Subscribing to removed orders")
-		xud.SubscribeRemovedOrders(orderRemoved)
+
+		err := xud.SubscribeRemovedOrders(orderRemoved)
+
+		if err != nil {
+			log.Error("Lost connection to XUD")
+		}
 	}()
 
 	placeOrders()

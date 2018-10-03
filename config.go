@@ -49,7 +49,7 @@ func initConfig() error {
 	}
 
 	if cfg.ConfigPath == "" {
-		getDefaultDataDir()
+		getXudTestsDataDir()
 		updateDefaultPaths()
 	}
 
@@ -60,7 +60,7 @@ func initConfig() error {
 	// Parse flags again to override config
 	flags.Parse(&cfg)
 
-	getDefaultDataDir()
+	getXudTestsDataDir()
 	updateDefaultPaths()
 
 	if _, err := os.Stat(cfg.DataDir); os.IsNotExist(err) {
@@ -72,13 +72,14 @@ func initConfig() error {
 	return nil
 }
 
-func getDefaultDataDir() {
+func getXudTestsDataDir() {
 	if cfg.DataDir == "" {
-		cfg.DataDir = getDataDir()
+		cfg.DataDir = getDataDir(applicationName)
 	}
 }
 
 func updateDefaultPaths() {
+	// xud-tests paths
 	configPath := path.Join(cfg.DataDir, applicationName+".conf")
 	logPath := path.Join(cfg.DataDir, applicationName+".logs")
 
@@ -89,19 +90,24 @@ func updateDefaultPaths() {
 	if cfg.LogPath == "" {
 		cfg.LogPath = logPath
 	}
+
+	// XUD paths
+	if cfg.Xud.GrpcCertificate == "" {
+		cfg.Xud.GrpcCertificate = path.Join(getDataDir("xud"), "tls.cert")
+	}
 }
 
-func getDataDir() (dir string) {
+func getDataDir(application string) (dir string) {
 	homeDir := getHomeDir()
 
 	switch runtime.GOOS {
 	case "darwin":
 	case "windows":
-		dir = path.Join(homeDir, strings.Title(applicationName))
+		dir = path.Join(homeDir, strings.Title(application))
 		break
 
 	default:
-		dir = path.Join(homeDir, "."+applicationName)
+		dir = path.Join(homeDir, "."+application)
 		break
 	}
 

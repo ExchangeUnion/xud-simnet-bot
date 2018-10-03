@@ -6,14 +6,17 @@ import (
 	"io"
 	"strconv"
 
+	"google.golang.org/grpc/credentials"
+
 	"github.com/ExchangeUnion/xud-tests/xudrpc"
 	"google.golang.org/grpc"
 )
 
 // Xud represents a XUD client
 type Xud struct {
-	GrpcHost string `long:"xud.host" default:"localhost" description:"XUD gRPC service host"`
-	GrpcPort int    `long:"xud.port" default:"8886" description:"XUD gRPC service port"`
+	GrpcHost        string `long:"xud.host" default:"localhost" description:"XUD gRPC service host"`
+	GrpcPort        int    `long:"xud.port" default:"8886" description:"XUD gRPC service port"`
+	GrpcCertificate string `long:"xud.certificatepath" description:"Path to the certificate of XUD gRPC"`
 
 	ctx    context.Context
 	client xudrpc.XudClient
@@ -24,9 +27,14 @@ type OrderRemoved func(order xudrpc.OrderRemoval)
 
 // Connect to a XUD node
 func (xud *Xud) Connect() error {
-	uri := xud.GrpcHost + ":" + strconv.Itoa(xud.GrpcPort)
+	creds, err := credentials.NewClientTLSFromFile(xud.GrpcCertificate, "")
 
-	con, err := grpc.Dial(uri, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	uri := xud.GrpcHost + ":" + strconv.Itoa(xud.GrpcPort)
+	con, err := grpc.Dial(uri, grpc.WithTransportCredentials(creds))
 
 	if err != nil {
 		return err
@@ -53,10 +61,10 @@ func (xud *Xud) PlaceOrder(request xudrpc.PlaceOrderRequest) (*xudrpc.PlaceOrder
 
 // SubscribeRemovedOrders notifies the client via a callback about removed orders
 func (xud *Xud) SubscribeRemovedOrders(callback OrderRemoved) error {
-	stream, err := xud.client.SubscribeRemovedOrders(xud.ctx, &xudrpc.SubscribeRemovedOrdersRequest{})
+	stream, streamErr := xud.client.SubscribeRemovedOrders(xud.ctx, &xudrpc.SubscribeRemovedOrdersRequest{})
 
-	if err != nil {
-		return err
+	if streamErr != nil {
+		return streamErr
 	}
 
 	wait := make(chan struct{})
@@ -70,6 +78,7 @@ func (xud *Xud) SubscribeRemovedOrders(callback OrderRemoved) error {
 					err = errors.New("lost connection to XUD")
 				}
 
+				streamErr = err
 				close(wait)
 				return
 			}
@@ -80,5 +89,5 @@ func (xud *Xud) SubscribeRemovedOrders(callback OrderRemoved) error {
 
 	<-wait
 
-	return err
+	return streamErr
 }

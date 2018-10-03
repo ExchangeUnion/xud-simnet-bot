@@ -18,11 +18,14 @@ func main() {
 
 	xud := cfg.Xud
 
-	if err := xud.Connect(); err != nil {
-		printError("Could not connect to XUD:", err)
+	err := xud.Connect()
+	info, err := xud.GetInfo()
+
+	if err != nil {
+		log.Error("Could not connect to XUD: %v", err)
+		os.Exit(1)
 	}
 
-	info, _ := xud.GetInfo()
 	log.Info("Conntected to XUD node %v version %v", info.NodePubKey, info.Version)
 
 	trading.InitTradingBot(xud)
