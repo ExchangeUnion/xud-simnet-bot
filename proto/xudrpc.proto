@@ -41,10 +41,10 @@ service Xud {
     };
   }
 
-  /* Cancel placed order from the orderbook. */
-  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
+  /* Removes an order from the order book by its local id. */
+  rpc RemoveOrder(RemoveOrderRequest) returns (RemoveOrderResponse) {
     option (google.api.http) = {
-      post: "/v1/cancelorder"
+      post: "/v1/removeorder"
       body: "*"
     };
   }
@@ -64,10 +64,10 @@ service Xud {
     };
   }
   
-  /* Disconnect from a connected peer XU node. */
-  rpc Disconnect(DisconnectRequest) returns (DisconnectResponse) {
+  /* Ban a XU node manually and disconnect from it. */
+  rpc Ban(BanRequest) returns (BanResponse) {
     option (google.api.http) = {
-      post: "/v1/disconnect"
+      post: "/v1/ban"
       body: "*"
     };
   }
@@ -208,11 +208,11 @@ message AddPairRequest {
 }
 message AddPairResponse {}
 
-message CancelOrderRequest {
-  // The local id of the order to cancel
+message RemoveOrderRequest {
+  // The local id of the order to remove
   string order_id = 1 [json_name = "order_id"];
 }
-message CancelOrderResponse {}
+message RemoveOrderResponse {}
 
 message ChannelBalance {
   // Sum of channels balances denominated in satoshis or equivalent
@@ -236,10 +236,10 @@ message ConnectRequest {
 }
 message ConnectResponse {}
 
-message DisconnectRequest {
+message BanRequest {
   string node_pub_key = 1 [json_name = "node_pub_key"];
 }
-message DisconnectResponse {}
+message BanResponse {}
 
 message GetInfoRequest {}
 message GetInfoResponse {
@@ -356,14 +356,18 @@ message Peer {
   string address = 1 [json_name = "address"];
   // The node pub key to uniquely identify this peer
   string node_pub_key = 2 [json_name = "node_pub_key"];
+  // The lnd BTC pub key associated with this peer
+  string lnd_btc_pub_key = 3 [json_name = "lnd_btc_pub_key"];
+  // The lnd LTC pub key associated with this peer
+  string lnd_ltc_pub_key = 4 [json_name = "lnd_ltc_pub_key"];
   // Indicates whether this peer was connected inbound
-  bool inbound = 3 [json_name = "inbound"];
+  bool inbound = 5 [json_name = "inbound"];
   // A list of trading pair tickers supported by this peer
-  repeated string pairs = 4 [json_name = "pairs"]; 
+  repeated string pairs = 6 [json_name = "pairs"]; 
   // The version of xud being used by the peer
-  string xud_version = 5 [json_name = "xud_version"];
+  string xud_version = 7 [json_name = "xud_version"];
   // The time in seconds that we have been connected to this peer
-  int32 seconds_connected = 6 [json_name = "seconds_connected"];
+  int32 seconds_connected = 8 [json_name = "seconds_connected"];
 }
 
 message PlaceOrderRequest {
