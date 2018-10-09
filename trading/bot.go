@@ -70,7 +70,7 @@ func placeOrder(params placeOrderParameters) *xudrpc.PlaceOrderResponse {
 		Price:    params.price,
 		Quantity: params.quantity,
 		Side:     params.side,
-		PairId:   "ZRX/GNT",
+		PairId:   "LTC/BTC",
 	})
 
 	if err != nil {

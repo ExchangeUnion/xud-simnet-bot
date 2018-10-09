@@ -56,7 +56,7 @@ func (xud *Xud) GetInfo() (*xudrpc.GetInfoResponse, error) {
 
 // PlaceOrder places a new order in XUD
 func (xud *Xud) PlaceOrder(request xudrpc.PlaceOrderRequest) (*xudrpc.PlaceOrderResponse, error) {
-	return xud.client.PlaceOrder(xud.ctx, &request)
+	return xud.client.PlaceOrderSync(xud.ctx, &request)
 }
 
 // SubscribeRemovedOrders notifies the client via a callback about removed orders
