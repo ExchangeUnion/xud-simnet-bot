@@ -54,8 +54,8 @@ func (xud *Xud) GetInfo() (*xudrpc.GetInfoResponse, error) {
 	return xud.client.GetInfo(xud.ctx, &xudrpc.GetInfoRequest{})
 }
 
-// PlaceOrder places a new order in XUD
-func (xud *Xud) PlaceOrder(request xudrpc.PlaceOrderRequest) (*xudrpc.PlaceOrderResponse, error) {
+// PlaceOrderSync places a new order in XUD
+func (xud *Xud) PlaceOrderSync(request xudrpc.PlaceOrderRequest) (*xudrpc.PlaceOrderResponse, error) {
 	return xud.client.PlaceOrderSync(xud.ctx, &request)
 }
 
