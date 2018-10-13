@@ -25,7 +25,7 @@ type openOrder struct {
 	toPlace placeOrderParameters
 }
 
-// InitTradingBot initialized a new trading bot
+// InitTradingBot initializes a new trading bot
 func InitTradingBot(xudclient *xudclient.Xud) {
 	xud = xudclient
 

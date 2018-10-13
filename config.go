@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/ExchangeUnion/xud-tests/lndclient"
 	"github.com/ExchangeUnion/xud-tests/xudclient"
 	"github.com/jessevdk/go-flags"
 )
@@ -34,21 +35,9 @@ type config struct {
 }
 
 // XUD config types
-type xudLndConfig struct {
-	Disable bool
-
-	Host string
-	Port int32
-
-	Certificate string `toml:"certpath"`
-
-	DisableMacaroons bool   `toml:"nomacaroons"`
-	Macaroon         string `toml:"macaroonpath"`
-}
-
 type xudConfig struct {
-	LndBtc *xudLndConfig `toml:"lndbtc"`
-	LndLtc *xudLndConfig `toml:"lndltc"`
+	LndBtc *lndclient.Lnd `toml:"lndbtc"`
+	LndLtc *lndclient.Lnd `toml:"lndltc"`
 }
 
 var cfg = config{}
@@ -94,7 +83,17 @@ func initConfig() error {
 	}
 
 	// Parse XUD config for information about how to connect to the LNDs
-	if _, err := toml.DecodeFile(cfg.Xud.Config, &xudCfg); err != nil {
+	_, err := toml.DecodeFile(cfg.Xud.Config, &xudCfg)
+
+	if err == nil {
+		if !xudCfg.LndBtc.Disable {
+			setXudLndDefaultValues(xudCfg.LndBtc, true)
+		}
+
+		if !xudCfg.LndLtc.Disable {
+			setXudLndDefaultValues(xudCfg.LndLtc, false)
+		}
+	} else {
 		fmt.Println("Could not parse config file of XUD:", err)
 	}
 
@@ -104,6 +103,29 @@ func initConfig() error {
 func getXudTestsDataDir() {
 	if cfg.DataDir == "" {
 		cfg.DataDir = getDataDir(applicationName)
+	}
+}
+
+func setXudLndDefaultValues(lnd *lndclient.Lnd, isBtc bool) {
+	dataDir := getDataDir("lnd")
+
+	if lnd.Certificate == "" {
+		lnd.Certificate = path.Join(dataDir, "tls.cert")
+	}
+
+	if !lnd.DisableMacaroons && lnd.Macaroon == "" {
+		// We are using simnet on our test nodes and therfore
+		// I assumed that this bot is going to be used on simnet
+		// if not explicitly told otherwise
+		macaroonDir := path.Join(dataDir, "data", "chain")
+
+		if isBtc {
+			macaroonDir = path.Join(macaroonDir, "bitcoin")
+		} else {
+			macaroonDir = path.Join(macaroonDir, "litecoin")
+		}
+
+		lnd.Macaroon = path.Join(macaroonDir, "admin.macaroon")
 	}
 }
 
@@ -154,11 +176,11 @@ func getHomeDir() (dir string) {
 
 	switch runtime.GOOS {
 	case "darwin":
-		dir = path.Join(usr.HomeDir, "AppData", "Local")
+		dir = path.Join(usr.HomeDir, "Library", "Application Support")
 		break
 
 	case "windows":
-		dir = path.Join(usr.HomeDir, "Library", "Application Support")
+		dir = path.Join(usr.HomeDir, "AppData", "Local")
 		break
 
 	default:

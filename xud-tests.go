@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ExchangeUnion/xud-tests/channels"
+	"github.com/ExchangeUnion/xud-tests/lndclient"
 	"github.com/ExchangeUnion/xud-tests/trading"
 )
 
@@ -16,23 +18,53 @@ func main() {
 		printError("Could not initialize logger:", err)
 	}
 
-	xud := cfg.Xud
+	if !cfg.DisableTrading {
+		log.Info("Starting trading bot")
 
-	err := xud.Connect()
-	info, err := xud.GetInfo()
+		xud := cfg.Xud
 
-	if err != nil {
-		log.Error("Could not connect to XUD: %v", err)
-		os.Exit(1)
+		err := xud.Connect()
+		info, err := xud.GetInfo()
+
+		if err == nil {
+			log.Info("Conntected to XUD node %v version %v", info.NodePubKey, info.Version)
+			trading.InitTradingBot(xud)
+		} else {
+			log.Error("Could not connect to XUD: %v", err)
+		}
 	}
 
-	log.Info("Conntected to XUD node %v version %v", info.NodePubKey, info.Version)
+	if !cfg.DisableChannelManager {
+		if !xudCfg.LndBtc.Disable {
+			initChannelManager(xudCfg.LndBtc, true)
+		}
 
-	if !cfg.DisableTrading {
-		trading.InitTradingBot(xud)
+		if !xudCfg.LndLtc.Disable {
+			initChannelManager(xudCfg.LndBtc, false)
+		}
 	}
 
 	select {}
+}
+
+func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
+	nodeName := "lndbtc"
+
+	if !isBtc {
+		nodeName = "lndltc"
+	}
+
+	log.Info("Starting channel manager for %v", nodeName)
+
+	err := lnd.Connect()
+	info, err := lnd.GetInfo()
+
+	if err == nil {
+		log.Info("Connected to %v node %v version %v", nodeName, info.IdentityPubkey, info.Version)
+		channels.InitChannelManager(lnd, nodeName)
+	} else {
+		log.Error("Could not connect to %v: %v", nodeName, err)
+	}
 }
 
 func printError(messages ...interface{}) {

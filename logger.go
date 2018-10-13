@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/ExchangeUnion/xud-tests/channels"
 	"github.com/ExchangeUnion/xud-tests/trading"
 	"github.com/op/go-logging"
 )
@@ -26,6 +27,7 @@ func initLogger(logFile string) error {
 	)
 
 	trading.UseLogger(*log)
+	channels.UseLogger(*log)
 
 	return nil
 }

@@ -2,11 +2,12 @@ package lndclient
 
 import (
 	"context"
-	"errors"
-	"io"
+	"encoding/hex"
+	"io/ioutil"
 	"strconv"
 
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 	"google.golang.org/grpc"
@@ -14,12 +15,15 @@ import (
 
 // Lnd represents a LND client
 type Lnd struct {
+	Disable bool
+
 	Host string
 	Port int
 
-	Certificate string
+	Certificate string `toml:"certpath"`
 
-	Macaroon string
+	DisableMacaroons bool   `toml:"nomacaroons"`
+	Macaroon         string `toml:"macaroonpath"`
 
 	ctx    context.Context
 	client lnrpc.LightningClient
@@ -45,6 +49,16 @@ func (lnd *Lnd) Connect() error {
 
 	if lnd.ctx == nil {
 		lnd.ctx = context.Background()
+
+		if !lnd.Disable && lnd.Macaroon != "" {
+			macaroon, err := getMacaroon(lnd.Macaroon)
+
+			if err == nil {
+				lnd.ctx = metadata.NewOutgoingContext(lnd.ctx, macaroon)
+			} else {
+				return err
+			}
+		}
 	}
 
 	lnd.client = lnrpc.NewLightningClient(con)
@@ -52,9 +66,29 @@ func (lnd *Lnd) Connect() error {
 	return nil
 }
 
+func getMacaroon(macaroonPath string) (macaroon metadata.MD, err error) {
+	data, err := ioutil.ReadFile(macaroonPath)
+
+	if err == nil {
+		macaroon = metadata.Pairs("macaroon", hex.EncodeToString(data))
+	}
+
+	return macaroon, err
+}
+
+// GetInfo returns general information about the LND node
+func (lnd *Lnd) GetInfo() (*lnrpc.GetInfoResponse, error) {
+	return lnd.client.GetInfo(lnd.ctx, &lnrpc.GetInfoRequest{})
+}
+
 // ListPeers gets a list of all currently active peers
 func (lnd *Lnd) ListPeers() (*lnrpc.ListPeersResponse, error) {
 	return lnd.client.ListPeers(lnd.ctx, &lnrpc.ListPeersRequest{})
+}
+
+// ListChannels gets alist of all open channels of the node
+func (lnd *Lnd) ListChannels() (*lnrpc.ListChannelsResponse, error) {
+	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})
 }
 
 // OpenChannel opens a new channel
@@ -63,34 +97,8 @@ func (lnd *Lnd) OpenChannel(request lnrpc.OpenChannelRequest) (*lnrpc.ChannelPoi
 }
 
 // CloseChannel attempts to close a channel
-func (lnd *Lnd) CloseChannel(request lnrpc.CloseChannelRequest, callback ChannelCloseUpdate) error {
-	stream, streamErr := lnd.client.CloseChannel(lnd.ctx, &request)
+func (lnd *Lnd) CloseChannel(request lnrpc.CloseChannelRequest) error {
+	_, err := lnd.client.CloseChannel(lnd.ctx, &request)
 
-	if streamErr != nil {
-		return streamErr
-	}
-
-	wait := make(chan struct{})
-
-	go func() {
-		for {
-			update, err := stream.Recv()
-
-			if err != nil {
-				if err == io.EOF {
-					err = errors.New("lost connection to LND")
-				}
-
-				streamErr = err
-				close(wait)
-				return
-			}
-
-			callback(*update)
-		}
-	}()
-
-	<-wait
-
-	return streamErr
+	return err
 }
