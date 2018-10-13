@@ -28,7 +28,9 @@ func main() {
 
 	log.Info("Conntected to XUD node %v version %v", info.NodePubKey, info.Version)
 
-	trading.InitTradingBot(xud)
+	if !cfg.DisableTrading {
+		trading.InitTradingBot(xud)
+	}
 
 	select {}
 }

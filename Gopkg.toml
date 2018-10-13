@@ -24,31 +24,34 @@
 #   go-tests = true
 #   unused-packages = true
 
-
-[[constraint]]
-  name = "github.com/golang/protobuf"
-  version = "1.2.0"
-
-[[constraint]]
-  branch = "master"
-  name = "golang.org/x/net"
-
-[[constraint]]
-  branch = "master"
-  name = "google.golang.org/genproto"
-
-[[constraint]]
-  name = "google.golang.org/grpc"
-  version = "1.15.0"
-
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/lightningnetwork/lnd"
+  version = "v0.5-beta"
+
+[[constraint]]
+  name = "github.com/golang/protobuf"
+  revision = "bbd03ef6da3a115852eaf24c8a1c46aeb39aa175"
+
+[[constraint]]
+  name = "golang.org/x/net"
+  revision = "ae89d30ce0c63142b652837da33d782e2b0a9b25"
+
+[[constraint]]
+  name = "google.golang.org/genproto"
+  revision = "df60624c1e9b9d2973e889c7a1cff73155da81c4"
+
+[[constraint]]
+  name = "github.com/jessevdk/go-flags"
+  version = "1.4.0"
 
 [[constraint]]
   name = "github.com/op/go-logging"
   version = "1.0.0"
 
 [[constraint]]
-  name = "github.com/jessevdk/go-flags"
-  version = "1.4.0"
+  name = "github.com/BurntSushi/toml"
+  version = "0.3.1"

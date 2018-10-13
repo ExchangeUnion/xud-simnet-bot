@@ -9,10 +9,12 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/ExchangeUnion/xud-tests/xudclient"
 	"github.com/jessevdk/go-flags"
 )
 
+// xud-tests config types
 type helpOptions struct {
 	ShowHelp    bool `long:"help" short:"h" description:"Show help"`
 	ShowVersion bool `long:"version" short:"v" description:"Show version number"`
@@ -23,12 +25,34 @@ type config struct {
 	ConfigPath string `long:"configpath" description:"Path to the config file"`
 	LogPath    string `long:"logpath" description:"Path to the log file"`
 
+	DisableTrading        bool `long:"trading" description:"Whether to disable the trading bot"`
+	DisableChannelManager bool `long:"channelmanager" description:"Whether to disable the channel manager"`
+
 	Xud *xudclient.Xud `group:"XUD"`
 
 	Help *helpOptions `group:"Help Options"`
 }
 
+// XUD config types
+type xudLndConfig struct {
+	Disable bool
+
+	Host string
+	Port int32
+
+	Certificate string `toml:"certpath"`
+
+	DisableMacaroons bool   `toml:"nomacaroons"`
+	Macaroon         string `toml:"macaroonpath"`
+}
+
+type xudConfig struct {
+	LndBtc *xudLndConfig `toml:"lndbtc"`
+	LndLtc *xudLndConfig `toml:"lndltc"`
+}
+
 var cfg = config{}
+var xudCfg = xudConfig{}
 
 func initConfig() error {
 	// Ignore unknown flags when parsing command line arguments the first time
@@ -69,6 +93,11 @@ func initConfig() error {
 		return err
 	}
 
+	// Parse XUD config for information about how to connect to the LNDs
+	if _, err := toml.DecodeFile(cfg.Xud.Config, &xudCfg); err != nil {
+		fmt.Println("Could not parse config file of XUD:", err)
+	}
+
 	return nil
 }
 
@@ -92,8 +121,14 @@ func updateDefaultPaths() {
 	}
 
 	// XUD paths
-	if cfg.Xud.GrpcCertificate == "" {
-		cfg.Xud.GrpcCertificate = path.Join(getDataDir("xud"), "tls.cert")
+	xudDir := getDataDir("xud")
+
+	if cfg.Xud.Certificate == "" {
+		cfg.Xud.Certificate = path.Join(xudDir, "tls.cert")
+	}
+
+	if cfg.Xud.Config == "" {
+		cfg.Xud.Config = path.Join(xudDir, "xud.conf")
 	}
 }
 

@@ -14,9 +14,12 @@ import (
 
 // Xud represents a XUD client
 type Xud struct {
-	GrpcHost        string `long:"xud.host" default:"localhost" description:"XUD gRPC service host"`
-	GrpcPort        int    `long:"xud.port" default:"8886" description:"XUD gRPC service port"`
-	GrpcCertificate string `long:"xud.certificatepath" description:"Path to the certificate of XUD gRPC"`
+	Host string `long:"xud.host" default:"localhost" description:"XUD gRPC service host"`
+	Port int    `long:"xud.port" default:"8886" description:"XUD gRPC service port"`
+
+	Certificate string `long:"xud.certificatepath" description:"Path to the certificate of the XUD gRPC interface"`
+
+	Config string `long:"xud.configpath" description:"Path to the config file of XUD"`
 
 	ctx    context.Context
 	client xudrpc.XudClient
@@ -27,13 +30,13 @@ type OrderRemoved func(order xudrpc.OrderRemoval)
 
 // Connect to a XUD node
 func (xud *Xud) Connect() error {
-	creds, err := credentials.NewClientTLSFromFile(xud.GrpcCertificate, "")
+	creds, err := credentials.NewClientTLSFromFile(xud.Certificate, "")
 
 	if err != nil {
 		return err
 	}
 
-	uri := xud.GrpcHost + ":" + strconv.Itoa(xud.GrpcPort)
+	uri := xud.Host + ":" + strconv.Itoa(xud.Port)
 	con, err := grpc.Dial(uri, grpc.WithTransportCredentials(creds))
 
 	if err != nil {
@@ -46,7 +49,7 @@ func (xud *Xud) Connect() error {
 
 	xud.client = xudrpc.NewXudClient(con)
 
-	return err
+	return nil
 }
 
 // GetInfo gets general information about the XUD node
