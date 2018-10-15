@@ -28,8 +28,8 @@ type Xud struct {
 // OrderRemoved is a callback that allows clients to get notified about order removals
 type OrderRemoved func(order xudrpc.OrderRemoval)
 
-// Connect to a XUD node
-func (xud *Xud) Connect() error {
+// Init to a XUD node
+func (xud *Xud) Init() error {
 	creds, err := credentials.NewClientTLSFromFile(xud.Certificate, "")
 
 	if err != nil {

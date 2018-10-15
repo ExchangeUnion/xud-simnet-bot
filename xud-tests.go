@@ -3,19 +3,22 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/ExchangeUnion/xud-tests/channels"
 	"github.com/ExchangeUnion/xud-tests/lndclient"
 	"github.com/ExchangeUnion/xud-tests/trading"
 )
 
+var wg sync.WaitGroup
+
 func main() {
 	if err := initConfig(); err != nil {
-		printError("Could not initialize config:", err)
+		printErrorAndExit("Could not initialize config:", err)
 	}
 
 	if err := initLogger(cfg.LogPath); err != nil {
-		printError("Could not initialize logger:", err)
+		printErrorAndExit("Could not initialize logger:", err)
 	}
 
 	if !cfg.DisableTrading {
@@ -23,14 +26,12 @@ func main() {
 
 		xud := cfg.Xud
 
-		err := xud.Connect()
-		info, err := xud.GetInfo()
+		err := xud.Init()
 
 		if err == nil {
-			log.Info("Conntected to XUD node %v version %v", info.NodePubKey, info.Version)
-			trading.InitTradingBot(xud)
+			trading.InitTradingBot(&wg, xud)
 		} else {
-			log.Error("Could not connect to XUD: %v", err)
+			printErrorAndExit("Could not read required files for XUD:", err)
 		}
 	}
 
@@ -44,7 +45,8 @@ func main() {
 		}
 	}
 
-	select {}
+	wg.Wait()
+	log.Info("All services died")
 }
 
 func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
@@ -56,18 +58,16 @@ func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
 
 	log.Info("Starting channel manager for %v", nodeName)
 
-	err := lnd.Connect()
-	info, err := lnd.GetInfo()
+	err := lnd.Init()
 
 	if err == nil {
-		log.Info("Connected to %v node %v version %v", nodeName, info.IdentityPubkey, info.Version)
-		channels.InitChannelManager(lnd, nodeName)
+		channels.InitChannelManager(&wg, lnd, nodeName)
 	} else {
-		log.Error("Could not connect to %v: %v", nodeName, err)
+		printErrorAndExit("Could not read required files for", nodeName, ":", err)
 	}
 }
 
-func printError(messages ...interface{}) {
+func printErrorAndExit(messages ...interface{}) {
 	fmt.Println(messages...)
 	os.Exit(1)
 }

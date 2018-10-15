@@ -11,7 +11,6 @@ import (
 )
 
 // TODO: handle cases in which a remote has multiple channels
-// TODO: try not to open a new channel if there is already a pending channel
 
 const newChannelAmt = 10000000
 
@@ -20,19 +19,24 @@ const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
 
 // inactiveTimes is a map between the public key of a node and the last time it was seen
 var inactiveTimes = make(map[string]time.Time)
-var inactiveTimesLock = sync.RWMutex{}
 
+var lnd *lndclient.Lnd
 var nodeName string
 
 // InitChannelManager initializes a new channel manager
-func InitChannelManager(lnd *lndclient.Lnd, name string) {
+func InitChannelManager(wg *sync.WaitGroup, lndclient *lndclient.Lnd, name string) {
+	lnd = lndclient
 	nodeName = name
 
-	handleChannels(lnd)
+	wg.Add(1)
 
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 
 	go func() {
+		defer wg.Done()
+
+		handleChannels(lnd)
+
 		for {
 			select {
 			case <-ticker.C:
@@ -48,6 +52,8 @@ func handleChannels(lnd *lndclient.Lnd) {
 
 	if err != nil {
 		logCouldNotConnect(err)
+
+		return
 	}
 
 	channelsMap := getChannelsMap(channels.Channels)
@@ -61,14 +67,15 @@ func openNewChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channel) {
 
 	if err != nil {
 		logCouldNotConnect(err)
-	}
 
-	inactiveTimesLock.RLock()
+		return
+	}
 
 	for _, peer := range peers.Peers {
 		_, hasChannel := channels[peer.PubKey]
 
 		if !hasChannel {
+			// TODO: don't open a new channel if there is already a pending channel
 			log.Debug("Opening new %v channel channel to: %v", nodeName, peer.PubKey)
 
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
@@ -82,19 +89,14 @@ func openNewChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channel) {
 			}
 		}
 	}
-
-	inactiveTimesLock.RUnlock()
 }
 
 func closeTimedOutChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channel) {
 	now := time.Now()
 
 	for _, channel := range channels {
-		inactiveTimesLock.RLock()
 		lastSeen, isInMap := inactiveTimes[channel.RemotePubkey]
-		inactiveTimesLock.RUnlock()
 
-		inactiveTimesLock.Lock()
 		if channel.Active {
 			if isInMap {
 				delete(inactiveTimes, channel.RemotePubkey)
@@ -115,8 +117,6 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channe
 				inactiveTimes[channel.RemotePubkey] = now
 			}
 		}
-
-		inactiveTimesLock.Unlock()
 	}
 }
 

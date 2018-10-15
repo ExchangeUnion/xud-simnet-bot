@@ -21,15 +21,20 @@ type placeOrderParameters struct {
 type openOrder struct {
 	quantityLeft float64
 
-	// What should be placed once it is filled completely
+	// What should be placed once the order is filled completely
 	toPlace placeOrderParameters
 }
 
 // InitTradingBot initializes a new trading bot
-func InitTradingBot(xudclient *xudclient.Xud) {
+func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud) {
 	xud = xudclient
 
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
+
+		// TODO: handle XUD getting down
 		log.Debug("Subscribing to removed orders")
 
 		err := xud.SubscribeRemovedOrders(orderRemoved)
@@ -85,6 +90,7 @@ func placeOrder(params placeOrderParameters) {
 
 	if err != nil {
 		log.Error("Could not place order: %v", err)
+		return
 	}
 
 	var remainingOrder = response.RemainingOrder

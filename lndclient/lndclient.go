@@ -32,8 +32,8 @@ type Lnd struct {
 // ChannelCloseUpdate is a callback that allows clients to get notified about channel closing events
 type ChannelCloseUpdate func(update lnrpc.CloseStatusUpdate)
 
-// Connect to the LND node
-func (lnd *Lnd) Connect() error {
+// Init to the LND node
+func (lnd *Lnd) Init() error {
 	creds, err := credentials.NewClientTLSFromFile(lnd.Certificate, "")
 
 	if err != nil {
