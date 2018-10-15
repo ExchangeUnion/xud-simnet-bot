@@ -1,6 +1,9 @@
 package channels
 
 import (
+	"encoding/gob"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -10,6 +13,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnrpc"
 )
 
+// TODO: send message to Slack channel / email address after important event
 // TODO: handle cases in which a remote has multiple channels
 
 const newChannelAmt = 10000000
@@ -17,16 +21,15 @@ const newChannelAmt = 10000000
 // channelCloseTimeout defines after how many seconds a channel times out and should be closed
 const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
 
-// inactiveTimes is a map between the public key of a node and the last time it was seen
-var inactiveTimes = make(map[string]time.Time)
-
-var lnd *lndclient.Lnd
-var nodeName string
-
 // InitChannelManager initializes a new channel manager
-func InitChannelManager(wg *sync.WaitGroup, lndclient *lndclient.Lnd, name string) {
-	lnd = lndclient
-	nodeName = name
+func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, dataDir string, nodeName string) {
+	// inactiveTimes is a map between the public key of a node and the last time it was seen
+	inactiveTimes := make(map[string]time.Time)
+
+	// Path to the latest copy of inactiveTimes on the disk
+	dataPath := path.Join(dataDir, nodeName+".dat")
+
+	readInactiveTimes(dataPath, &inactiveTimes)
 
 	wg.Add(1)
 
@@ -35,38 +38,40 @@ func InitChannelManager(wg *sync.WaitGroup, lndclient *lndclient.Lnd, name strin
 	go func() {
 		defer wg.Done()
 
-		handleChannels(lnd)
+		handleChannels(lnd, nodeName, inactiveTimes, dataPath)
 
 		for {
 			select {
 			case <-ticker.C:
-				handleChannels(lnd)
+				handleChannels(lnd, nodeName, inactiveTimes, dataPath)
 				break
 			}
 		}
 	}()
 }
 
-func handleChannels(lnd *lndclient.Lnd) {
+func handleChannels(lnd *lndclient.Lnd, nodeName string, inactiveTimes map[string]time.Time, dataPath string) {
 	channels, err := lnd.ListChannels()
 
 	if err != nil {
-		logCouldNotConnect(err)
+		logCouldNotConnect(nodeName, err)
 
 		return
 	}
 
 	channelsMap := getChannelsMap(channels.Channels)
 
-	openNewChannels(lnd, channelsMap)
-	closeTimedOutChannels(lnd, channelsMap)
+	openNewChannels(lnd, nodeName, channelsMap)
+	closeTimedOutChannels(lnd, nodeName, inactiveTimes, channelsMap)
+
+	saveInactiveTimes(dataPath, inactiveTimes)
 }
 
-func openNewChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channel) {
+func openNewChannels(lnd *lndclient.Lnd, nodeName string, channels map[string]*lnrpc.Channel) {
 	peers, err := lnd.ListPeers()
 
 	if err != nil {
-		logCouldNotConnect(err)
+		logCouldNotConnect(nodeName, err)
 
 		return
 	}
@@ -85,13 +90,13 @@ func openNewChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channel) {
 			})
 
 			if err != nil {
-				logCouldNotConnect(err)
+				logCouldNotConnect(nodeName, err)
 			}
 		}
 	}
 }
 
-func closeTimedOutChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channel) {
+func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, inactiveTimes map[string]time.Time, channels map[string]*lnrpc.Channel) {
 	now := time.Now()
 
 	for _, channel := range channels {
@@ -117,6 +122,41 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, channels map[string]*lnrpc.Channe
 				inactiveTimes[channel.RemotePubkey] = now
 			}
 		}
+	}
+}
+
+func saveInactiveTimes(dataPath string, data map[string]time.Time) {
+	file, err := os.OpenFile(dataPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	defer file.Close()
+
+	if err != nil {
+		log.Warning("Could not write channel data to disk: %v", err)
+		return
+	}
+
+	encoder := gob.NewEncoder(file)
+	encoder.Encode(data)
+}
+
+func readInactiveTimes(dataPath string, data *map[string]time.Time) {
+	if _, err := os.Stat(dataPath); err != nil {
+		// File does not exist
+		return
+	}
+
+	file, err := os.Open(dataPath)
+	defer file.Close()
+
+	if err != nil {
+		log.Warning("Could not read channel data from disk: %v", err)
+		return
+	}
+
+	decoder := gob.NewDecoder(file)
+	err = decoder.Decode(data)
+
+	if err != nil {
+		log.Warning("Could not parse channel data from disk: %v", err)
 	}
 }
 

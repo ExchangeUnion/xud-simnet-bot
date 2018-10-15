@@ -46,7 +46,7 @@ func main() {
 	}
 
 	wg.Wait()
-	log.Info("All services died")
+	log.Warning("All services died")
 }
 
 func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
@@ -61,7 +61,7 @@ func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
 	err := lnd.Init()
 
 	if err == nil {
-		channels.InitChannelManager(&wg, lnd, nodeName)
+		channels.InitChannelManager(&wg, lnd, cfg.DataDir, nodeName)
 	} else {
 		printErrorAndExit("Could not read required files for", nodeName, ":", err)
 	}

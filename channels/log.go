@@ -12,10 +12,10 @@ func UseLogger(logger logging.Logger) {
 	log = logger
 }
 
-func logConnected(info lnrpc.GetInfoResponse) {
+func logConnected(nodeName string, info lnrpc.GetInfoResponse) {
 	log.Info("Connected to %v node %v version %v", nodeName, info.IdentityPubkey, info.Version)
 }
 
-func logCouldNotConnect(err error) {
+func logCouldNotConnect(nodeName string, err error) {
 	log.Warning("Could not connect to %v: %v", nodeName, err)
 }
