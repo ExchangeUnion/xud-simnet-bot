@@ -86,6 +86,11 @@ func (lnd *Lnd) ListPeers() (*lnrpc.ListPeersResponse, error) {
 	return lnd.client.ListPeers(lnd.ctx, &lnrpc.ListPeersRequest{})
 }
 
+// PendingChannels gets a list of all pending channels
+func (lnd *Lnd) PendingChannels() (*lnrpc.PendingChannelsResponse, error) {
+	return lnd.client.PendingChannels(lnd.ctx, &lnrpc.PendingChannelsRequest{})
+}
+
 // ListChannels gets alist of all open channels of the node
 func (lnd *Lnd) ListChannels() (*lnrpc.ListChannelsResponse, error) {
 	return lnd.client.ListChannels(lnd.ctx, &lnrpc.ListChannelsRequest{})

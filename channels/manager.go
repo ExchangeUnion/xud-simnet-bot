@@ -55,7 +55,6 @@ func handleChannels(lnd *lndclient.Lnd, nodeName string, inactiveTimes map[strin
 
 	if err != nil {
 		logCouldNotConnect(nodeName, err)
-
 		return
 	}
 
@@ -72,15 +71,23 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, channels map[string]*l
 
 	if err != nil {
 		logCouldNotConnect(nodeName, err)
-
 		return
 	}
+
+	pendingChannels, err := lnd.PendingChannels()
+
+	if err != nil {
+		logCouldNotConnect(nodeName, err)
+		return
+	}
+
+	pendingOpen := pendingChannels.GetPendingOpenChannels()
 
 	for _, peer := range peers.Peers {
 		_, hasChannel := channels[peer.PubKey]
 
-		if !hasChannel {
-			// TODO: don't open a new channel if there is already a pending channel
+		if !hasChannel && !pendingOpenChannelsContainsPeer(pendingOpen, peer.PubKey) {
+
 			log.Debug("Opening new %v channel channel to: %v", nodeName, peer.PubKey)
 
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
@@ -158,6 +165,16 @@ func readInactiveTimes(dataPath string, data *map[string]time.Time) {
 	if err != nil {
 		log.Warning("Could not parse channel data from disk: %v", err)
 	}
+}
+
+func pendingOpenChannelsContainsPeer(pendingChannels []*lnrpc.PendingChannelsResponse_PendingOpenChannel, peerPubKey string) bool {
+	for _, channel := range pendingChannels {
+		if channel.Channel.RemoteNodePub == peerPubKey {
+			return true
+		}
+	}
+
+	return false
 }
 
 func getChannelsMap(channels []*lnrpc.Channel) map[string]*lnrpc.Channel {
