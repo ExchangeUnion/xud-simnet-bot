@@ -33,7 +33,7 @@ func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, dataDir string, 
 
 	wg.Add(1)
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 
 	go func() {
 		defer wg.Done()

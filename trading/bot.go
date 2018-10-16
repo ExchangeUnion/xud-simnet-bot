@@ -2,6 +2,7 @@ package trading
 
 import (
 	"sync"
+	"time"
 
 	"github.com/ExchangeUnion/xud-tests/xudclient"
 	"github.com/ExchangeUnion/xud-tests/xudrpc"
@@ -34,17 +35,22 @@ func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud) {
 	go func() {
 		defer wg.Done()
 
-		// TODO: handle XUD getting down
-		log.Debug("Subscribing to removed orders")
-
-		err := xud.SubscribeRemovedOrders(orderRemoved)
-
-		if err != nil {
-			log.Error("Lost connection to XUD")
-		}
+		startXudSubscription()
 	}()
+}
+
+func startXudSubscription() {
+	log.Debug("Subscribing to removed orders")
 
 	placeOrders()
+	err := xud.SubscribeRemovedOrders(orderRemoved)
+
+	if err != nil {
+		log.Error("Lost connection to XUD. Retrying in 5 seconds")
+		time.Sleep(5 * time.Second)
+
+		startXudSubscription()
+	}
 }
 
 func placeOrders() {
@@ -63,13 +69,19 @@ func placeOrders() {
 		},
 	}
 
+	var err error
+
 	// Add each order five times
 	for _, order := range orders {
 		for i := 0; i < 5; i++ {
 			wg.Add(1)
 
 			go func(order placeOrderParameters) {
-				placeOrder(order)
+				placeErr := placeOrder(order)
+				if placeErr != nil {
+					err = placeErr
+				}
+
 				wg.Done()
 			}(order)
 		}
@@ -77,10 +89,14 @@ func placeOrders() {
 
 	wg.Wait()
 
-	log.Debug("Placed orders")
+	if err != nil {
+		log.Warning("Could not place orders: %v", err)
+	} else {
+		log.Debug("Placed orders")
+	}
 }
 
-func placeOrder(params placeOrderParameters) {
+func placeOrder(params placeOrderParameters) error {
 	response, err := xud.PlaceOrderSync(xudrpc.PlaceOrderRequest{
 		Price:    params.price,
 		Quantity: params.quantity,
@@ -89,8 +105,7 @@ func placeOrder(params placeOrderParameters) {
 	})
 
 	if err != nil {
-		log.Error("Could not place order: %v", err)
-		return
+		return err
 	}
 
 	var remainingOrder = response.RemainingOrder
@@ -98,9 +113,9 @@ func placeOrder(params placeOrderParameters) {
 	// Place a new order until there is quantity remaining
 	if remainingOrder == nil || remainingOrder.Quantity == 0 {
 		log.Debug("Nothing left of placed order: placing new one")
-		placeOrder(params)
+		err = placeOrder(params)
 
-		return
+		return err
 	}
 
 	openOrdersLock.Lock()
@@ -111,6 +126,8 @@ func placeOrder(params placeOrderParameters) {
 	}
 
 	openOrdersLock.Unlock()
+
+	return err
 }
 
 func orderRemoved(removal xudrpc.OrderRemoval) {
