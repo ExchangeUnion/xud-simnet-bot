@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/ExchangeUnion/xud-tests/channels"
+	"github.com/ExchangeUnion/xud-tests/slackclient"
 	"github.com/ExchangeUnion/xud-tests/trading"
 	"github.com/op/go-logging"
 )
@@ -28,6 +29,7 @@ func initLogger(logFile string) error {
 
 	trading.UseLogger(*log)
 	channels.UseLogger(*log)
+	slackclient.UseLogger(*log)
 
 	return nil
 }

@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ExchangeUnion/xud-tests/slackclient"
+
 	"github.com/ExchangeUnion/xud-tests/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
 )
 
-// TODO: send message to Slack channel / email address after important event
 // TODO: handle cases in which a remote has multiple channels
 
 const newChannelAmt = 10000000
@@ -22,7 +23,7 @@ const newChannelAmt = 10000000
 const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
 
 // InitChannelManager initializes a new channel manager
-func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, dataDir string, nodeName string) {
+func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, slack *slackclient.Slack, dataDir string, nodeName string) {
 	// inactiveTimes is a map between the public key of a node and the last time it was seen
 	inactiveTimes := make(map[string]time.Time)
 
@@ -38,19 +39,19 @@ func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, dataDir string, 
 	go func() {
 		defer wg.Done()
 
-		handleChannels(lnd, nodeName, inactiveTimes, dataPath)
+		handleChannels(lnd, nodeName, slack, inactiveTimes, dataPath)
 
 		for {
 			select {
 			case <-ticker.C:
-				handleChannels(lnd, nodeName, inactiveTimes, dataPath)
+				handleChannels(lnd, nodeName, slack, inactiveTimes, dataPath)
 				break
 			}
 		}
 	}()
 }
 
-func handleChannels(lnd *lndclient.Lnd, nodeName string, inactiveTimes map[string]time.Time, dataPath string) {
+func handleChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, dataPath string) {
 	channels, err := lnd.ListChannels()
 
 	if err != nil {
@@ -60,13 +61,13 @@ func handleChannels(lnd *lndclient.Lnd, nodeName string, inactiveTimes map[strin
 
 	channelsMap := getChannelsMap(channels.Channels)
 
-	openNewChannels(lnd, nodeName, channelsMap)
-	closeTimedOutChannels(lnd, nodeName, inactiveTimes, channelsMap)
+	openNewChannels(lnd, nodeName, slack, channelsMap)
+	closeTimedOutChannels(lnd, nodeName, slack, inactiveTimes, channelsMap)
 
 	saveInactiveTimes(dataPath, inactiveTimes)
 }
 
-func openNewChannels(lnd *lndclient.Lnd, nodeName string, channels map[string]*lnrpc.Channel) {
+func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, channels map[string]*lnrpc.Channel) {
 	peers, err := lnd.ListPeers()
 
 	if err != nil {
@@ -87,8 +88,9 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, channels map[string]*l
 		_, hasChannel := channels[peer.PubKey]
 
 		if !hasChannel && !pendingOpenChannelsContainsPeer(pendingOpen, peer.PubKey) {
-
-			log.Debug("Opening new %v channel channel to: %v", nodeName, peer.PubKey)
+			message := "Opening new " + nodeName + " channel to: " + peer.PubKey
+			log.Info(message)
+			slack.SendMessage(message)
 
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
 				NodePubkeyString:   peer.PubKey,
@@ -103,7 +105,7 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, channels map[string]*l
 	}
 }
 
-func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, inactiveTimes map[string]time.Time, channels map[string]*lnrpc.Channel) {
+func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, channels map[string]*lnrpc.Channel) {
 	now := time.Now()
 
 	for _, channel := range channels {
@@ -116,7 +118,9 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, inactiveTimes ma
 		} else {
 			if isInMap {
 				if now.Sub(lastSeen) > channelCloseTimeout {
-					log.Debug("Closing %v channel channel to: %v", nodeName, channel.RemotePubkey)
+					message := "Closing " + nodeName + " channel to: " + channel.RemotePubkey
+					log.Info(message)
+					slack.SendMessage(message)
 
 					lnd.CloseChannel(lnrpc.CloseChannelRequest{
 						ChannelPoint: getChannelPoint(channel.ChannelPoint),

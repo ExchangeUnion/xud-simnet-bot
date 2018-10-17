@@ -11,6 +11,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/ExchangeUnion/xud-tests/lndclient"
+	"github.com/ExchangeUnion/xud-tests/slackclient"
 	"github.com/ExchangeUnion/xud-tests/xudclient"
 	"github.com/jessevdk/go-flags"
 )
@@ -30,6 +31,8 @@ type config struct {
 	DisableChannelManager bool `long:"channelmanager" description:"Whether to disable the channel manager"`
 
 	Xud *xudclient.Xud `group:"XUD"`
+
+	Slack *slackclient.Slack `group:"Slack"`
 
 	Help *helpOptions `group:"Help Options"`
 }
