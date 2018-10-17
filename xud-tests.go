@@ -43,7 +43,7 @@ func main() {
 		}
 
 		if !xudCfg.LndLtc.Disable {
-			initChannelManager(xudCfg.LndBtc, false)
+			initChannelManager(xudCfg.LndLtc, false)
 		}
 	}
 

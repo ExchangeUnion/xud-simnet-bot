@@ -46,6 +46,8 @@ func startXudSubscription() {
 	err := xud.SubscribeRemovedOrders(orderRemoved)
 
 	if err != nil {
+		openOrders = make(map[string]*openOrder)
+
 		log.Error("Lost connection to XUD. Retrying in 5 seconds")
 		time.Sleep(5 * time.Second)
 
