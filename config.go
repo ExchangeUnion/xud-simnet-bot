@@ -27,8 +27,8 @@ type config struct {
 	ConfigPath string `long:"configpath" description:"Path to the config file"`
 	LogPath    string `long:"logpath" description:"Path to the log file"`
 
-	DisableTrading        bool `long:"trading" description:"Whether to disable the trading bot"`
-	DisableChannelManager bool `long:"channelmanager" description:"Whether to disable the channel manager"`
+	DisableTrading        bool `long:"disabletrading" description:"Whether to disable the trading bot"`
+	DisableChannelManager bool `long:"disablechannelmanager" description:"Whether to disable the channel manager"`
 
 	Xud *xudclient.Xud `group:"XUD"`
 
