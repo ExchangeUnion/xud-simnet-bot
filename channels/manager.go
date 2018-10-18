@@ -52,12 +52,15 @@ func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, slack *slackclie
 }
 
 func handleChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, dataPath string) {
+	log.Debug(nodeName + ": checking channels")
+
 	channels, err := lnd.ListChannels()
 
 	if err != nil {
 		logCouldNotConnect(nodeName, err)
 		return
 	}
+	log.Debug(nodeName + ": found " + strconv.Itoa(len(channels.Channels)) + " channels " )
 
 	channelsMap := getChannelsMap(channels.Channels)
 
@@ -81,16 +84,17 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 		logCouldNotConnect(nodeName, err)
 		return
 	}
-
+// Offer: not nice that channels are taken there but pending channels here.
+// also, don't you think it would be better to add the pending channels into the map?
+// it will reduce code later
 	pendingOpen := pendingChannels.GetPendingOpenChannels()
 
+	log.Debug(nodeName + ": processing " + strconv.Itoa(len(peers.Peers)) + " connected nodes")
 	for _, peer := range peers.Peers {
 		_, hasChannel := channels[peer.PubKey]
 
 		if !hasChannel && !pendingOpenChannelsContainsPeer(pendingOpen, peer.PubKey) {
 			message := "Opening new " + nodeName + " channel to: " + peer.PubKey
-			log.Info(message)
-			slack.SendMessage(message)
 
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
 				NodePubkeyString:   peer.PubKey,
@@ -100,8 +104,19 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 
 			if err != nil {
 				logCouldNotConnect(nodeName, err)
+				slack.SendMessage(nodeName + ": Failed to open new channel with " + peer.PubKey + " Error: " + err.Error())
+
+				return
 			}
+
+			log.Info(message)
+			slack.SendMessage(message)
+
+		} else {
+			log.Debug(nodeName + ": peer " + peer.PubKey + " already has a channel. Skipping")
 		}
+
+
 	}
 }
 
