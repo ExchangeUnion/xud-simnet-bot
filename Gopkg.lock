@@ -2,71 +2,90 @@
 
 
 [[projects]]
+  digest = "1:9f3b30d9f8e0d7040f729b82dcbc8f0dead820a133b3147ce355fc451f32d761"
   name = "github.com/BurntSushi/toml"
   packages = ["."]
+  pruneopts = "UT"
   revision = "3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005"
   version = "v0.3.1"
 
 [[projects]]
+  digest = "1:19c3d5be42d5d503b94650e45bb2a01264bb36caff20f708e9cf67a6683b4c04"
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
     "proto",
     "protoc-gen-go/descriptor",
     "ptypes/any",
-    "ptypes/struct"
+    "ptypes/struct",
   ]
+  pruneopts = "UT"
   revision = "bbd03ef6da3a115852eaf24c8a1c46aeb39aa175"
 
 [[projects]]
+  digest = "1:7b5c6e2eeaa9ae5907c391a91c132abfd5c9e8a784a341b5625e750c67e6825d"
   name = "github.com/gorilla/websocket"
   packages = ["."]
+  pruneopts = "UT"
   revision = "66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d"
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:983bdae4397d2a7c88316865e7de6b76bbedd8c33342004931829eba0975d9ed"
   name = "github.com/grpc-ecosystem/grpc-gateway"
   packages = [
     "runtime",
     "runtime/internal",
-    "utilities"
+    "utilities",
   ]
+  pruneopts = "UT"
   revision = "f2862b476edcef83412c7af8687c9cd8e4097c0f"
 
 [[projects]]
+  digest = "1:a2cff208d4759f6ba1b1cd228587b0a1869f95f22542ec9cd17fff64430113c7"
   name = "github.com/jessevdk/go-flags"
   packages = ["."]
+  pruneopts = "UT"
   revision = "c6ca198ec95c841fdb89fc0de7496fed11ab854e"
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:0a86a2a0017087534f863f766063ef8da72aa47c324ac22ad4604e97e3ef3f9f"
   name = "github.com/lightningnetwork/lnd"
   packages = ["lnrpc"]
+  pruneopts = "UT"
   revision = "fb95858afce6d7129758e7677bcb1552c5be2c51"
   version = "v0.5-beta-rc2"
 
 [[projects]]
+  digest = "1:95d38d218bf2290987c6b0e885a9f0f2d3d3239235acaddca01c3fe36e5e5566"
   name = "github.com/nlopes/slack"
   packages = [
     ".",
-    "slackutilsx"
+    "slackutilsx",
   ]
+  pruneopts = "UT"
   revision = "b9033a72a20bf84563485e86a2adbea4bf265804"
   version = "v0.4.0"
 
 [[projects]]
+  digest = "1:5b3b29ce0e569f62935d9541dff2e16cc09df981ebde48e82259076a73a3d0c7"
   name = "github.com/op/go-logging"
   packages = ["."]
+  pruneopts = "UT"
   revision = "b2cb9fa56473e98db8caba80237377e83fe44db5"
   version = "v1"
 
 [[projects]]
+  digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
   name = "github.com/pkg/errors"
   packages = ["."]
+  pruneopts = "UT"
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:279284b3cc1429d8ea79402792b17c5dbfadd583ec4963db69f0368762f89be4"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -75,11 +94,13 @@
     "idna",
     "internal/timeseries",
     "lex/httplex",
-    "trace"
+    "trace",
   ]
+  pruneopts = "UT"
   revision = "ae89d30ce0c63142b652837da33d782e2b0a9b25"
 
 [[projects]]
+  digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -95,20 +116,24 @@
     "unicode/bidi",
     "unicode/cldr",
     "unicode/norm",
-    "unicode/rangetable"
+    "unicode/rangetable",
   ]
+  pruneopts = "UT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
 [[projects]]
+  digest = "1:c2dee8dbcc504d1a7858f5dbaed7c8b256c512c5e9e81480158c30185bbd2792"
   name = "google.golang.org/genproto"
   packages = [
     "googleapis/api/annotations",
-    "googleapis/rpc/status"
+    "googleapis/rpc/status",
   ]
+  pruneopts = "UT"
   revision = "df60624c1e9b9d2973e889c7a1cff73155da81c4"
 
 [[projects]]
+  digest = "1:8d9ccf0a790b530f94357a5d27e9c86fb53e862b6e0f9133c792269c0b567218"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -125,13 +150,26 @@
     "stats",
     "status",
     "tap",
-    "transport"
+    "transport",
   ]
+  pruneopts = "UT"
   revision = "b3ddf786825de56a4178401b7e174ee332173b66"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6ff10d1ea745ed543e7ae41cab960f2d72fb727863c70181996fb57f899e237a"
+  input-imports = [
+    "github.com/BurntSushi/toml",
+    "github.com/golang/protobuf/proto",
+    "github.com/jessevdk/go-flags",
+    "github.com/lightningnetwork/lnd/lnrpc",
+    "github.com/nlopes/slack",
+    "github.com/op/go-logging",
+    "golang.org/x/net/context",
+    "google.golang.org/genproto/googleapis/api/annotations",
+    "google.golang.org/grpc",
+    "google.golang.org/grpc/credentials",
+    "google.golang.org/grpc/metadata",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
