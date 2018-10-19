@@ -137,6 +137,7 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclie
 					log.Info(message)
 					slack.SendMessage(message)
 
+					// TODO: check err from LND
 					lnd.CloseChannel(lnrpc.CloseChannelRequest{
 						ChannelPoint: getChannelPoint(channel.ChannelPoint),
 						Force:        true,
