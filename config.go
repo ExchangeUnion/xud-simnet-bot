@@ -82,7 +82,9 @@ func initConfig() error {
 	if _, err := os.Stat(cfg.DataDir); os.IsNotExist(err) {
 		err = os.Mkdir(cfg.DataDir, 0700)
 
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// Parse XUD config for information about how to connect to the LNDs
@@ -162,6 +164,9 @@ func getDataDir(application string) (dir string) {
 
 	switch runtime.GOOS {
 	case "darwin":
+		dir = path.Join(homeDir, application)
+		break
+
 	case "windows":
 		dir = path.Join(homeDir, strings.Title(application))
 		break
