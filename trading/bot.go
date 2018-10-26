@@ -65,12 +65,12 @@ func placeOrders() error {
 
 	orders := []placeOrderParameters{
 		{
-			price:    0.001,
+			price:    0.005,
 			quantity: 0.01,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.002,
+			price:    0.01,
 			quantity: 0.01,
 			side:     xudrpc.OrderSide_SELL,
 		},
