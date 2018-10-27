@@ -80,8 +80,10 @@ func initConfig() error {
 
 	if _, err := os.Stat(cfg.DataDir); os.IsNotExist(err) {
 		err = os.Mkdir(cfg.DataDir, 0700)
-// Offer: are you sure there is an error here?
-		return err
+
+		if err != nil {
+			return err
+		}
 	}
 
 	// Parse XUD config for information about how to connect to the LNDs
@@ -90,7 +92,7 @@ func initConfig() error {
 	if err != nil {
 		return err
 	}
-// Offer: if LndBtc or LndLtc are disable - you better fail the bot.
+// TODO: if LndBtc or LndLtc are disable - you better fail the bot.
 	if !xudCfg.LndBtc.Disable {
 		setXudLndDefaultValues(xudCfg.LndBtc, true)
 	}

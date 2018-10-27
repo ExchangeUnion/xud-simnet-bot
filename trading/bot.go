@@ -42,8 +42,13 @@ func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud) {
 func startXudSubscription() {
 	log.Debug("Subscribing to removed orders")
 
-	placeOrders()
-	err := xud.SubscribeRemovedOrders(orderRemoved)
+	err := placeOrders()
+
+	if err == nil && len(openOrders) != 0 {
+		// TODO: check if the orders still exist
+	}
+
+	err = xud.SubscribeRemovedOrders(orderRemoved)
 
 	if err != nil {
 		openOrders = make(map[string]*openOrder)
@@ -55,7 +60,7 @@ func startXudSubscription() {
 	}
 }
 
-func placeOrders() {
+func placeOrders() error {
 	var wg sync.WaitGroup
 
 	orders := []placeOrderParameters{
@@ -96,6 +101,8 @@ func placeOrders() {
 	} else {
 		log.Debug("Placed orders")
 	}
+
+	return err
 }
 
 func placeOrder(params placeOrderParameters) error {
