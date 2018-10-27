@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/user"
 	"path"
@@ -70,7 +69,7 @@ func initConfig() error {
 	}
 
 	if err := flags.IniParse(cfg.ConfigPath, &cfg); err != nil {
-		fmt.Println("Could not find config file:", err)
+		return err
 	}
 
 	// Parse flags again to override config
@@ -90,16 +89,16 @@ func initConfig() error {
 	// Parse XUD config for information about how to connect to the LNDs
 	_, err := toml.DecodeFile(cfg.Xud.Config, &xudCfg)
 
-	if err == nil {
-		if !xudCfg.LndBtc.Disable {
-			setXudLndDefaultValues(xudCfg.LndBtc, true)
-		}
+	if err != nil {
+		return err
+	}
+// TODO: if LndBtc or LndLtc are disable - you better fail the bot.
+	if !xudCfg.LndBtc.Disable {
+		setXudLndDefaultValues(xudCfg.LndBtc, true)
+	}
 
-		if !xudCfg.LndLtc.Disable {
-			setXudLndDefaultValues(xudCfg.LndLtc, false)
-		}
-	} else {
-		fmt.Println("Could not parse config file of XUD:", err)
+	if !xudCfg.LndLtc.Disable {
+		setXudLndDefaultValues(xudCfg.LndLtc, false)
 	}
 
 	return nil

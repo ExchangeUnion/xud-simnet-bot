@@ -89,6 +89,10 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 		_, hasChannel := channels[peer.PubKey]
 
 		if !hasChannel {
+			message := "Opening new " + nodeName + " channel to: " + peer.PubKey
+			log.Info(message)
+			slack.SendMessage(message)
+
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
 				NodePubkeyString:   peer.PubKey,
 				LocalFundingAmount: newChannelAmt,
@@ -102,9 +106,8 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 				return
 			}
 
-			message := "Opening new " + nodeName + " channel to: " + peer.PubKey
-			log.Info(message)
-			slack.SendMessage(message)
+		} else {
+			log.Debug(nodeName + ": peer " + peer.PubKey + " already has a channel. Skipping")
 		}
 	}
 }
@@ -122,6 +125,9 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclie
 		} else if !channel.pendingOpen {
 			if isInMap {
 				if now.Sub(lastSeen) > channelCloseTimeout {
+					message := "Closing " + nodeName + " channel to: " + remotePubKey
+					log.Info(message)
+					slack.SendMessage(message)
 					err := lnd.CloseChannel(lnrpc.CloseChannelRequest{
 						ChannelPoint: getChannelPoint(channel.channelPoint),
 						Force:        true,
@@ -136,9 +142,6 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclie
 
 					delete(inactiveTimes, remotePubKey)
 
-					message := "Closing " + nodeName + " channel to: " + remotePubKey
-					log.Info(message)
-					slack.SendMessage(message)
 				}
 			} else {
 				inactiveTimes[remotePubKey] = now
