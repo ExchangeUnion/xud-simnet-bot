@@ -17,6 +17,12 @@ import (
 
 // TODO: handle cases in which a remote has multiple channels
 
+type channelType struct {
+	active       bool
+	pendingOpen  bool
+	channelPoint string
+}
+
 const newChannelAmt = 10000000
 
 // channelCloseTimeout defines after how many seconds a channel times out and should be closed
@@ -52,17 +58,16 @@ func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, slack *slackclie
 }
 
 func handleChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, dataPath string) {
-	log.Debug(nodeName + ": checking channels")
+	log.Debug("Checking " + nodeName + " channels")
 
-	channels, err := lnd.ListChannels()
+	channelsMap, err := getChannelsMap(lnd)
 
 	if err != nil {
 		logCouldNotConnect(nodeName, err)
 		return
 	}
-	log.Debug(nodeName + ": found " + strconv.Itoa(len(channels.Channels)) + " channels " )
 
-	channelsMap := getChannelsMap(channels.Channels)
+	log.Debug("Found " + strconv.Itoa(len(channelsMap)) + " " + nodeName + " channels")
 
 	openNewChannels(lnd, nodeName, slack, channelsMap)
 	closeTimedOutChannels(lnd, nodeName, slack, inactiveTimes, channelsMap)
@@ -70,7 +75,7 @@ func handleChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slac
 	saveInactiveTimes(dataPath, inactiveTimes)
 }
 
-func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, channels map[string]*lnrpc.Channel) {
+func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, channels map[string]*channelType) {
 	peers, err := lnd.ListPeers()
 
 	if err != nil {
@@ -78,24 +83,13 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 		return
 	}
 
-	pendingChannels, err := lnd.PendingChannels()
+	log.Debug("Processing " + strconv.Itoa(len(peers.Peers)) + " connected " + nodeName + " nodes")
 
-	if err != nil {
-		logCouldNotConnect(nodeName, err)
-		return
-	}
-// Offer: not nice that channels are taken there but pending channels here.
-// also, don't you think it would be better to add the pending channels into the map?
-// it will reduce code later
-	pendingOpen := pendingChannels.GetPendingOpenChannels()
-
-	log.Debug(nodeName + ": processing " + strconv.Itoa(len(peers.Peers)) + " connected nodes")
 	for _, peer := range peers.Peers {
 		_, hasChannel := channels[peer.PubKey]
 
-		if !hasChannel && !pendingOpenChannelsContainsPeer(pendingOpen, peer.PubKey) {
+		if !hasChannel {
 			message := "Opening new " + nodeName + " channel to: " + peer.PubKey
-
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
 				NodePubkeyString:   peer.PubKey,
 				LocalFundingAmount: newChannelAmt,
@@ -104,7 +98,7 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 
 			if err != nil {
 				logCouldNotConnect(nodeName, err)
-				slack.SendMessage(nodeName + ": Failed to open new channel with " + peer.PubKey + " Error: " + err.Error())
+				slack.SendMessage("Failed to open new " + nodeName + " channel with " + peer.PubKey + ": " + err.Error())
 
 				return
 			}
@@ -115,38 +109,42 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 		} else {
 			log.Debug(nodeName + ": peer " + peer.PubKey + " already has a channel. Skipping")
 		}
-
-
 	}
 }
 
-func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, channels map[string]*lnrpc.Channel) {
+func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, channels map[string]*channelType) {
 	now := time.Now()
 
-	for _, channel := range channels {
-		lastSeen, isInMap := inactiveTimes[channel.RemotePubkey]
+	for remotePubKey, channel := range channels {
+		lastSeen, isInMap := inactiveTimes[remotePubKey]
 
-		if channel.Active {
+		if channel.active {
 			if isInMap {
-				delete(inactiveTimes, channel.RemotePubkey)
+				delete(inactiveTimes, remotePubKey)
 			}
-		} else {
+		} else if !channel.pendingOpen {
 			if isInMap {
 				if now.Sub(lastSeen) > channelCloseTimeout {
-					message := "Closing " + nodeName + " channel to: " + channel.RemotePubkey
+					message := "Closing " + nodeName + " channel to: " + remotePubKey
 					log.Info(message)
 					slack.SendMessage(message)
-
-					// TODO: check err from LND
-					lnd.CloseChannel(lnrpc.CloseChannelRequest{
-						ChannelPoint: getChannelPoint(channel.ChannelPoint),
+					err := lnd.CloseChannel(lnrpc.CloseChannelRequest{
+						ChannelPoint: getChannelPoint(channel.channelPoint),
 						Force:        true,
 					})
 
-					delete(inactiveTimes, channel.RemotePubkey)
+					if err != nil {
+						logCouldNotConnect(nodeName, err)
+						slack.SendMessage("Failed to close " + nodeName + " channel " + channel.channelPoint + ": " + err.Error())
+
+						return
+					}
+
+					delete(inactiveTimes, remotePubKey)
+
 				}
 			} else {
-				inactiveTimes[channel.RemotePubkey] = now
+				inactiveTimes[remotePubKey] = now
 			}
 		}
 	}
@@ -187,24 +185,40 @@ func readInactiveTimes(dataPath string, data *map[string]time.Time) {
 	}
 }
 
-func pendingOpenChannelsContainsPeer(pendingChannels []*lnrpc.PendingChannelsResponse_PendingOpenChannel, peerPubKey string) bool {
-	for _, channel := range pendingChannels {
-		if channel.Channel.RemoteNodePub == peerPubKey {
-			return true
+func getChannelsMap(lnd *lndclient.Lnd) (map[string]*channelType, error) {
+	channelsMap := make(map[string]*channelType)
+
+	channels, err := lnd.ListChannels()
+
+	if err != nil {
+		return channelsMap, err
+	}
+
+	pendingChannels, err := lnd.PendingChannels()
+
+	if err != nil {
+		return channelsMap, err
+	}
+
+	for _, channel := range channels.Channels {
+		channelsMap[channel.RemotePubkey] = &channelType{
+			active:       channel.Active,
+			pendingOpen:  false,
+			channelPoint: channel.ChannelPoint,
 		}
 	}
 
-	return false
-}
+	for _, pendingOpen := range pendingChannels.PendingOpenChannels {
+		channel := pendingOpen.Channel
 
-func getChannelsMap(channels []*lnrpc.Channel) map[string]*lnrpc.Channel {
-	channelsMap := make(map[string]*lnrpc.Channel)
-
-	for _, channel := range channels {
-		channelsMap[channel.RemotePubkey] = channel
+		channelsMap[channel.RemoteNodePub] = &channelType{
+			active:       false,
+			pendingOpen:  true,
+			channelPoint: channel.ChannelPoint,
+		}
 	}
 
-	return channelsMap
+	return channelsMap, err
 }
 
 func getChannelPoint(channelPoint string) *lnrpc.ChannelPoint {
