@@ -65,22 +65,22 @@ func placeOrders() error {
 
 	orders := []placeOrderParameters{
 		{
-			price:    0.7,
+			price:    0.86,
 			quantity: 0.003,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.75,
+			price:    0.87,
 			quantity: 0.0025,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.8,
+			price:    0.88,
 			quantity: 0.002,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.85,
+			price:    0.89,
 			quantity: 0.0015,
 			side:     xudrpc.OrderSide_BUY,
 		},
@@ -96,22 +96,22 @@ func placeOrders() error {
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.15,
+			price:    1.11,
 			quantity: 0.0015,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.2,
+			price:    1.12,
 			quantity: 0.002,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.25,
+			price:    1.13,
 			quantity: 0.0025,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.3,
+			price:    1.14,
 			quantity: 0.003,
 			side:     xudrpc.OrderSide_SELL,
 		},
