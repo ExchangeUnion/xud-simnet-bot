@@ -90,6 +90,9 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 
 		if !hasChannel {
 			message := "Opening new " + nodeName + " channel to: " + peer.PubKey
+			log.Info(message)
+			slack.SendMessage(message)
+
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
 				NodePubkeyString:   peer.PubKey,
 				LocalFundingAmount: newChannelAmt,
@@ -102,9 +105,6 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 
 				return
 			}
-
-			log.Info(message)
-			slack.SendMessage(message)
 
 		} else {
 			log.Debug(nodeName + ": peer " + peer.PubKey + " already has a channel. Skipping")
