@@ -65,33 +65,71 @@ func placeOrders() error {
 
 	orders := []placeOrderParameters{
 		{
-			price:    0.005,
-			quantity: 0.01,
+			price:    0.7,
+			quantity: 0.003,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.01,
-			quantity: 0.01,
+			price:    0.75,
+			quantity: 0.0025,
+			side:     xudrpc.OrderSide_BUY,
+		},
+		{
+			price:    0.8,
+			quantity: 0.002,
+			side:     xudrpc.OrderSide_BUY,
+		},
+		{
+			price:    0.85,
+			quantity: 0.0015,
+			side:     xudrpc.OrderSide_BUY,
+		},
+		{
+			price:    0.9,
+			quantity: 0.001,
+			side:     xudrpc.OrderSide_BUY,
+		},
+
+		{
+			price:    1.1,
+			quantity: 0.001,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.15,
+			quantity: 0.0015,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.2,
+			quantity: 0.002,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.25,
+			quantity: 0.0025,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.3,
+			quantity: 0.003,
 			side:     xudrpc.OrderSide_SELL,
 		},
 	}
 
 	var err error
 
-	// Add each order five times
 	for _, order := range orders {
-		for i := 0; i < 5; i++ {
-			wg.Add(1)
+		wg.Add(1)
 
-			go func(order placeOrderParameters) {
-				placeErr := placeOrder(order)
-				if placeErr != nil {
-					err = placeErr
-				}
+		go func(order placeOrderParameters) {
+			placeErr := placeOrder(order)
+			if placeErr != nil {
+				err = placeErr
+			}
 
-				wg.Done()
-			}(order)
-		}
+			wg.Done()
+		}(order)
 	}
 
 	wg.Wait()
