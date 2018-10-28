@@ -11,7 +11,6 @@ import (
 var xud *xudclient.Xud
 
 var openOrders = make(map[string]*openOrder)
-var openOrdersLock = sync.RWMutex{}
 
 type placeOrderParameters struct {
 	price    float64
@@ -35,29 +34,39 @@ func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud) {
 	go func() {
 		defer wg.Done()
 
-		startXudSubscription()
+		log.Debug("Subscribing to removed orders")
+
+		err := startXudSubscription()
+
+		for err != nil {
+			openOrders = make(map[string]*openOrder)
+
+			log.Error("Lost connection to XUD. Retrying in 5 seconds")
+			time.Sleep(5 * time.Second)
+
+			startXudSubscription()
+		}
 	}()
 }
 
-func startXudSubscription() {
-	log.Debug("Subscribing to removed orders")
-
+func startXudSubscription() error {
 	err := placeOrders()
 
-	if err == nil && len(openOrders) != 0 {
-		// TODO: check if the orders still exist
+	if err != nil {
+		return err
 	}
 
 	err = xud.SubscribeRemovedOrders(orderRemoved)
 
 	if err != nil {
-		openOrders = make(map[string]*openOrder)
-
-		log.Error("Lost connection to XUD. Retrying in 5 seconds")
-		time.Sleep(5 * time.Second)
-
-		startXudSubscription()
+		return err
 	}
+
+	if len(openOrders) != 0 {
+		// TODO: check if the orders still exist
+	}
+
+	return nil
 }
 
 func placeOrders() error {
@@ -136,11 +145,11 @@ func placeOrders() error {
 
 	if err != nil {
 		log.Warning("Could not place orders: %v", err)
-	} else {
-		log.Debug("Placed orders")
+		return err
 	}
 
-	return err
+	log.Debug("Placed orders")
+	return nil
 }
 
 func placeOrder(params placeOrderParameters) error {
@@ -165,14 +174,10 @@ func placeOrder(params placeOrderParameters) error {
 		return err
 	}
 
-	openOrdersLock.Lock()
-
 	openOrders[remainingOrder.Id] = &openOrder{
 		quantityLeft: remainingOrder.Quantity,
 		toPlace:      params,
 	}
-
-	openOrdersLock.Unlock()
 
 	return err
 }
@@ -180,18 +185,14 @@ func placeOrder(params placeOrderParameters) error {
 func orderRemoved(removal xudrpc.OrderRemoval) {
 	log.Debug("Order removed: %v", removal)
 
-	openOrdersLock.RLock()
-
 	filledOrder := openOrders[removal.OrderId]
-
-	openOrdersLock.RUnlock()
 
 	if filledOrder != nil {
 		filledOrder.quantityLeft -= removal.Quantity
 
 		// Check if there is quantity left and place new order if not
 		if filledOrder.quantityLeft == 0 {
-			log.Debug("Placing new order")
+			log.Debug("Placing new order: %v", filledOrder.toPlace)
 			placeOrder(filledOrder.toPlace)
 		}
 	}
