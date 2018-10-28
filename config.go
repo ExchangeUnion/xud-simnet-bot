@@ -92,7 +92,7 @@ func initConfig() error {
 	if err != nil {
 		return err
 	}
-// TODO: if LndBtc or LndLtc are disable - you better fail the bot.
+	// TODO: if LndBtc or LndLtc are disable - you better fail the bot.
 	if !xudCfg.LndBtc.Disable {
 		setXudLndDefaultValues(xudCfg.LndBtc, true)
 	}
