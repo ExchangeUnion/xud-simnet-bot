@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"path"
@@ -52,8 +53,6 @@ func initConfig() error {
 	parser.Parse()
 
 	if cfg.Help.ShowHelp {
-		parser.Usage = "[options]"
-
 		parser.WriteHelp(os.Stdout)
 		os.Exit(0)
 	}
@@ -69,7 +68,11 @@ func initConfig() error {
 	}
 
 	if err := flags.IniParse(cfg.ConfigPath, &cfg); err != nil {
-		return err
+		if strings.HasSuffix(err.Error(), "no such file or directory") {
+			fmt.Println("Could not find log file: " + err.Error())
+		} else {
+			return err
+		}
 	}
 
 	// Parse flags again to override config
