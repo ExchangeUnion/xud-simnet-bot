@@ -11,7 +11,6 @@ import (
 var xud *xudclient.Xud
 
 var openOrders = make(map[string]*openOrder)
-var openOrdersLock = sync.RWMutex{}
 
 type placeOrderParameters struct {
 	price    float64
@@ -35,29 +34,39 @@ func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud) {
 	go func() {
 		defer wg.Done()
 
-		startXudSubscription()
+		log.Debug("Subscribing to removed orders")
+
+		err := startXudSubscription()
+
+		for err != nil {
+			openOrders = make(map[string]*openOrder)
+
+			log.Error("Lost connection to XUD. Retrying in 5 seconds")
+			time.Sleep(5 * time.Second)
+
+			startXudSubscription()
+		}
 	}()
 }
 
-func startXudSubscription() {
-	log.Debug("Subscribing to removed orders")
-
+func startXudSubscription() error {
 	err := placeOrders()
 
-	if err == nil && len(openOrders) != 0 {
-		// TODO: check if the orders still exist
+	if err != nil {
+		return err
 	}
 
 	err = xud.SubscribeRemovedOrders(orderRemoved)
 
 	if err != nil {
-		openOrders = make(map[string]*openOrder)
-
-		log.Error("Lost connection to XUD. Retrying in 5 seconds")
-		time.Sleep(5 * time.Second)
-
-		startXudSubscription()
+		return err
 	}
+
+	if len(openOrders) != 0 {
+		// TODO: check if the orders still exist
+	}
+
+	return nil
 }
 
 func placeOrders() error {
@@ -65,44 +74,82 @@ func placeOrders() error {
 
 	orders := []placeOrderParameters{
 		{
-			price:    0.001,
-			quantity: 0.01,
+			price:    0.86,
+			quantity: 0.003,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.002,
-			quantity: 0.01,
+			price:    0.87,
+			quantity: 0.0025,
+			side:     xudrpc.OrderSide_BUY,
+		},
+		{
+			price:    0.88,
+			quantity: 0.002,
+			side:     xudrpc.OrderSide_BUY,
+		},
+		{
+			price:    0.89,
+			quantity: 0.0015,
+			side:     xudrpc.OrderSide_BUY,
+		},
+		{
+			price:    0.9,
+			quantity: 0.001,
+			side:     xudrpc.OrderSide_BUY,
+		},
+
+		{
+			price:    1.1,
+			quantity: 0.001,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.11,
+			quantity: 0.0015,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.12,
+			quantity: 0.002,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.13,
+			quantity: 0.0025,
+			side:     xudrpc.OrderSide_SELL,
+		},
+		{
+			price:    1.14,
+			quantity: 0.003,
 			side:     xudrpc.OrderSide_SELL,
 		},
 	}
 
 	var err error
 
-	// Add each order five times
 	for _, order := range orders {
-		for i := 0; i < 5; i++ {
-			wg.Add(1)
+		wg.Add(1)
 
-			go func(order placeOrderParameters) {
-				placeErr := placeOrder(order)
-				if placeErr != nil {
-					err = placeErr
-				}
+		go func(order placeOrderParameters) {
+			placeErr := placeOrder(order)
+			if placeErr != nil {
+				err = placeErr
+			}
 
-				wg.Done()
-			}(order)
-		}
+			wg.Done()
+		}(order)
 	}
 
 	wg.Wait()
 
 	if err != nil {
 		log.Warning("Could not place orders: %v", err)
-	} else {
-		log.Debug("Placed orders")
+		return err
 	}
 
-	return err
+	log.Debug("Placed orders")
+	return nil
 }
 
 func placeOrder(params placeOrderParameters) error {
@@ -127,14 +174,10 @@ func placeOrder(params placeOrderParameters) error {
 		return err
 	}
 
-	openOrdersLock.Lock()
-
 	openOrders[remainingOrder.Id] = &openOrder{
 		quantityLeft: remainingOrder.Quantity,
 		toPlace:      params,
 	}
-
-	openOrdersLock.Unlock()
 
 	return err
 }
@@ -142,18 +185,14 @@ func placeOrder(params placeOrderParameters) error {
 func orderRemoved(removal xudrpc.OrderRemoval) {
 	log.Debug("Order removed: %v", removal)
 
-	openOrdersLock.RLock()
-
 	filledOrder := openOrders[removal.OrderId]
-
-	openOrdersLock.RUnlock()
 
 	if filledOrder != nil {
 		filledOrder.quantityLeft -= removal.Quantity
 
 		// Check if there is quantity left and place new order if not
 		if filledOrder.quantityLeft == 0 {
-			log.Debug("Placing new order")
+			log.Debug("Placing new order: %v", filledOrder.toPlace)
 			placeOrder(filledOrder.toPlace)
 		}
 	}
