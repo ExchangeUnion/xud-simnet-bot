@@ -23,7 +23,7 @@ type channelType struct {
 	channelPoint string
 }
 
-const newChannelAmt = 10000000
+const newChannelAmt = 16000000
 
 // channelCloseTimeout defines after how many seconds a channel times out and should be closed
 const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
@@ -77,6 +77,11 @@ func handleChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slac
 
 func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, channels map[string]*channelType) {
 	peers, err := lnd.ListPeers()
+	rate := 1
+
+	if nodeName == "lndltc" {
+		rate = 60
+	}
 
 	if err != nil {
 		logCouldNotConnect(nodeName, err)
@@ -95,8 +100,8 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
 				NodePubkeyString:   peer.PubKey,
-				LocalFundingAmount: newChannelAmt,
-				PushSat:            newChannelAmt / 2,
+				LocalFundingAmount: int64(rate * newChannelAmt),
+				PushSat:            int64(rate * newChannelAmt / 2),
 			})
 
 			if err != nil {
