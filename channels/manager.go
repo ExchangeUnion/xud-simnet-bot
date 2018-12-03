@@ -23,7 +23,7 @@ type channelType struct {
 	channelPoint string
 }
 
-const newChannelAmt = 16000000
+const newChannelAmt = 25*100000000
 
 // channelCloseTimeout defines after how many seconds a channel times out and should be closed
 const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
@@ -80,7 +80,7 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 	rate := 1
 
 	if nodeName == "lndltc" {
-		rate = 60
+		rate = 90
 	}
 
 	if err != nil {
