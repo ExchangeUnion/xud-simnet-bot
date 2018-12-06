@@ -70,58 +70,57 @@ func startXudSubscription() error {
 }
 
 func placeOrders() error {
-	var wg sync.WaitGroup
 
 	orders := []placeOrderParameters{
 		{
-			price:    0.86,
-			quantity: 0.003,
+			price:    0.0077,
+			quantity: 13.0,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.87,
-			quantity: 0.0025,
+			price:    0.0076,
+			quantity: 15.5,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.88,
-			quantity: 0.002,
+			price:    0.0075,
+			quantity: 18.0,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.89,
-			quantity: 0.0015,
+			price:    0.0074,
+			quantity: 21.25,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
-			price:    0.9,
-			quantity: 0.001,
+			price:    0.0073,
+			quantity: 24.0,
 			side:     xudrpc.OrderSide_BUY,
 		},
 
 		{
-			price:    1.1,
-			quantity: 0.001,
+			price:    0.0079,
+			quantity: 11.5,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.11,
-			quantity: 0.0015,
+			price:    0.0080,
+			quantity: 13,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.12,
-			quantity: 0.002,
+			price:    0.0081,
+			quantity: 15.6,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.13,
-			quantity: 0.0025,
+			price:    0.0082,
+			quantity: 18.1,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
-			price:    1.14,
-			quantity: 0.003,
+			price:    0.0083,
+			quantity: 22.3,
 			side:     xudrpc.OrderSide_SELL,
 		},
 	}
@@ -129,19 +128,11 @@ func placeOrders() error {
 	var err error
 
 	for _, order := range orders {
-		wg.Add(1)
-
-		go func(order placeOrderParameters) {
 			placeErr := placeOrder(order)
 			if placeErr != nil {
 				err = placeErr
 			}
-
-			wg.Done()
-		}(order)
 	}
-
-	wg.Wait()
 
 	if err != nil {
 		log.Warning("Could not place orders: %v", err)
