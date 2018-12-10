@@ -9,6 +9,8 @@ import (
 )
 
 var xud *xudclient.Xud
+var mode string
+var swaps = 0
 
 var openOrders = make(map[string]*openOrder)
 
@@ -26,46 +28,47 @@ type openOrder struct {
 }
 
 // InitTradingBot initializes a new trading bot
-func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud) {
+func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud, tradingMode string) {
 	xud = xudclient
+	mode = tradingMode
 
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
 
-		log.Debug("Subscribing to removed orders")
+		for {
 
-		err := startXudSubscription()
+			// ensure connectivity to xud
+			info, err := xud.GetInfo()
+			for err != nil {
+				log.Error("Lost connection to XUD. Retrying in 5 seconds")
+				time.Sleep(5 * time.Second)
+				info, err = xud.GetInfo()
+			}
+			log.Infof("%v", info)
 
-		for err != nil {
-			openOrders = make(map[string]*openOrder)
+			log.Debug("Placing orders")
 
-			log.Error("Lost connection to XUD. Retrying in 5 seconds")
-			time.Sleep(5 * time.Second)
+			go placeOrders()
+			log.Debug("Subscribing to order events")
 
-			startXudSubscription()
+			go subscribeAddedOrders()
+			subscribeRemovedOrders()
 		}
+
 	}()
 }
 
-func startXudSubscription() error {
-	err := placeOrders()
+func subscribeAddedOrders() error {
+	err := xud.SubscribeAddedOrders(orderAdded)
+	return err
+}
 
-	if err != nil {
-		return err
-	}
 
-	err = xud.SubscribeRemovedOrders(orderRemoved)
-
-	if err != nil {
-		return err
-	}
-
-	if len(openOrders) != 0 {
-		// TODO: check if the orders still exist
-	}
-
+func subscribeRemovedOrders() error {
+	err := xud.SubscribeRemovedOrders(orderRemoved)
+	log.Infof("SubscribeRemovedOrders: exiting %v", err)
 	return nil
 }
 
@@ -74,7 +77,7 @@ func placeOrders() error {
 	orders := []placeOrderParameters{
 		{
 			price:    0.0077,
-			quantity: 13.0,
+			quantity: 3.5,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
@@ -100,7 +103,7 @@ func placeOrders() error {
 
 		{
 			price:    0.0079,
-			quantity: 11.5,
+			quantity: 2.5,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
@@ -125,38 +128,71 @@ func placeOrders() error {
 		},
 	}
 
-	var err error
-
-	for _, order := range orders {
-			placeErr := placeOrder(order)
-			if placeErr != nil {
-				err = placeErr
+	switch  mode {
+	case "standard":
+		for _, order := range orders {
+			err := placeOrder(order)
+			if err != nil {
+				log.Errorf("Could not place orders: %v - %v", order, err)
+				return err
 			}
+		}
+		log.Debug("Placed orders")
+		break
+	case "2.5@0.0079":
+		order := placeOrderParameters{
+			price:    0.0079,
+			quantity: 2.5,
+			side:     xudrpc.OrderSide_BUY,
+		}
+		err := fillOrKill(order)
+		if err != nil {
+			log.Errorf("Could not place FOK order: %v - %v", order, err)
+			return err
+		}
+		break
+	case "3.5@0.0077":
+		order := placeOrderParameters{
+			price:    0.0077,
+			quantity: 3.5,
+			side:     xudrpc.OrderSide_SELL,
+		}
+		err := fillOrKill(order)
+		if err != nil {
+			log.Errorf("Could not place FOK order: %v - %v", order, err)
+			return err
+		}
+		break
+	default:
+
 	}
 
-	if err != nil {
-		log.Warning("Could not place orders: %v", err)
-		return err
-	}
-
-	log.Debug("Placed orders")
 	return nil
 }
 
 func placeOrder(params placeOrderParameters) error {
-	response, err := xud.PlaceOrderSync(xudrpc.PlaceOrderRequest{
+	req := xudrpc.PlaceOrderRequest{
 		Price:    params.price,
 		Quantity: params.quantity,
 		Side:     params.side,
 		PairId:   "LTC/BTC",
-	})
+	}
+	log.Debugf("Placing order: %v ", req)
+	response, err := xud.PlaceOrderSync(req)
+
 
 	if err != nil {
 		return err
 	}
 
+	if response.SwapResults != nil {
+		log.Debugf("Swapped: %v ", response.SwapResults)
+	}
+
 	var remainingOrder = response.RemainingOrder
 
+
+	// check - why this should be done? maybe the stream opens after the orders?
 	// Place a new order until there is quantity remaining
 	if remainingOrder == nil || remainingOrder.Quantity == 0 {
 		log.Debug("Nothing left of placed order: placing new one")
@@ -173,6 +209,41 @@ func placeOrder(params placeOrderParameters) error {
 	return err
 }
 
+func fillOrKill(params placeOrderParameters) error {
+	req := xudrpc.PlaceOrderRequest{
+		Price:    params.price,
+		Quantity: params.quantity,
+		Side:     params.side,
+		PairId:   "LTC/BTC",
+	}
+	log.Debugf("Placing FOK order: %v ", req)
+	response, err := xud.PlaceOrderSync(req)
+
+	if err != nil {
+		log.Errorf("FOK place order failed: %v", err)
+		return err
+	}
+
+	if response.SwapResults != nil {
+		swaps++
+		log.Debugf("#%v FOK Swapped: %v ", swaps, response.SwapResults)
+	}
+
+	if (response.RemainingOrder != nil) {
+		killReq := &xudrpc.RemoveOrderRequest{
+			OrderId:	response.RemainingOrder.Id,
+		}
+		resp, err := xud.Client.RemoveOrder(xud.Ctx, killReq)
+		if (err != nil) {
+			log.Errorf("Failed to remove Remaining order : %v", resp.String())
+			return err
+		}
+		log.Debugf("Remaining order removed: %v", resp.String())
+
+	}
+	return nil
+}
+
 func orderRemoved(removal xudrpc.OrderRemoval) {
 	log.Debug("Order removed: %v", removal)
 
@@ -187,4 +258,47 @@ func orderRemoved(removal xudrpc.OrderRemoval) {
 			placeOrder(filledOrder.toPlace)
 		}
 	}
+}
+
+
+func orderAdded(newOrder xudrpc.Order) {
+	switch mode {
+	case "standard":
+		log.Debug("Order added: %v", newOrder)
+		break
+	case "2.5@0.0079":
+		if newOrder.Price == 0.0079 && newOrder.Quantity == 2.5 && !newOrder.IsOwnOrder && newOrder.Side == xudrpc.OrderSide_SELL {
+			log.Debug("Order detected: %v", newOrder)
+			order := placeOrderParameters{
+				price:    0.0079,
+				quantity: 2.5,
+				side:     xudrpc.OrderSide_BUY,
+			}
+			err := fillOrKill(order)
+			if err != nil {
+				log.Errorf("Could not place FOK order: %v - %v", order, err)
+				return
+			}
+			break
+		}
+	case "3.5@0.0077":
+		if newOrder.Price == 0.0077 && newOrder.Quantity == 3.5 && !newOrder.IsOwnOrder && newOrder.Side == xudrpc.OrderSide_BUY {
+			log.Debug("Order detected: %v", newOrder)
+			order := placeOrderParameters{
+				price:    0.0077,
+				quantity: 3.5,
+				side:     xudrpc.OrderSide_SELL,
+			}
+			err := fillOrKill(order)
+			if err != nil {
+				log.Errorf("Could not place FOK order: %v - %v", order, err)
+				return
+			}
+			break
+		}
+
+	}
+
+
+
 }

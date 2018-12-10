@@ -24,14 +24,14 @@ func main() {
 	cfg.Slack.InitSlack()
 
 	if !cfg.DisableTrading {
-		log.Info("Starting trading bot")
+		log.Infof("Starting trading bot with %v mode", cfg.TradingMode)
 
 		xud := cfg.Xud
 
 		err := xud.Init()
 
 		if err == nil {
-			trading.InitTradingBot(&wg, xud)
+			trading.InitTradingBot(&wg, xud, cfg.TradingMode)
 		} else {
 			printErrorAndExit("Could not read required files for XUD:", err)
 		}
