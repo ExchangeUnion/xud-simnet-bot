@@ -185,9 +185,9 @@ func placeOrder(params placeOrderParameters) error {
 		return err
 	}
 
-	if response.SwapResults != nil {
-		log.Debugf("Swapped: %v ", response.SwapResults)
-	}
+	//if response.SwapResults != nil {
+	//	log.Debugf("Swapped: %v ", response.SwapResults)
+	//}
 
 	var remainingOrder = response.RemainingOrder
 
@@ -224,10 +224,10 @@ func fillOrKill(params placeOrderParameters) error {
 		return err
 	}
 
-	if response.SwapResults != nil {
-		swaps++
-		log.Debugf("#%v FOK Swapped: %v ", swaps, response.SwapResults)
-	}
+	//if response.SwapResults != nil {
+	//	swaps++
+	//	log.Debugf("#%v FOK Swapped: %v ", swaps, response.SwapResults)
+	//}
 
 	if (response.RemainingOrder != nil) {
 		killReq := &xudrpc.RemoveOrderRequest{
