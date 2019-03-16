@@ -10,7 +10,7 @@ import (
 
 var xud *xudclient.Xud
 var mode string
-var swaps = 0
+//var swaps = 0
 
 var openOrders = make(map[string]*openOrder)
 
@@ -44,6 +44,7 @@ func InitTradingBot(wg *sync.WaitGroup, xudclient *xudclient.Xud, tradingMode st
 			for err != nil {
 				log.Error("Lost connection to XUD. Retrying in 5 seconds")
 				time.Sleep(5 * time.Second)
+				xud.Init()
 				info, err = xud.GetInfo()
 			}
 			log.Infof("%v", info)
