@@ -65,7 +65,7 @@ func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
 	if err == nil {
 		channels.InitChannelManager(&wg, lnd, cfg.Slack, cfg.DataDir, nodeName)
 	} else {
-		printErrorAndExit("Could not read required files for", nodeName, ":", err)
+		printErrorAndExit("Could not read required files for ", nodeName, ":", err)
 	}
 }
 

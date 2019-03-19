@@ -3,3 +3,9 @@ vendor/
 
 # Compiled binaries
 xud-tests
+
+# GoLand
+.idea
+
+# Visual Studio Code
+.vscode
