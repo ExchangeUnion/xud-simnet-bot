@@ -16,12 +16,12 @@ var openOrders = make(map[string]*openOrder)
 
 type placeOrderParameters struct {
 	price    float64
-	quantity float64
+	quantity uint64
 	side     xudrpc.OrderSide
 }
 
 type openOrder struct {
-	quantityLeft float64
+	quantityLeft uint64
 
 	// What should be placed once the order is filled completely
 	toPlace placeOrderParameters
@@ -78,53 +78,53 @@ func placeOrders() error {
 	orders := []placeOrderParameters{
 		{
 			price:    0.0077,
-			quantity: 3.5,
+			quantity: 3.5*1E8,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
 			price:    0.0076,
-			quantity: 15.5,
+			quantity: 15.5*1E8,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
 			price:    0.0075,
-			quantity: 18.0,
+			quantity: 18.0*1E8,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
 			price:    0.0074,
-			quantity: 21.25,
+			quantity: 21.25*1E8,
 			side:     xudrpc.OrderSide_BUY,
 		},
 		{
 			price:    0.0073,
-			quantity: 24.0,
+			quantity: 24.0*1E8,
 			side:     xudrpc.OrderSide_BUY,
 		},
 
 		{
 			price:    0.0079,
-			quantity: 2.5,
+			quantity: 2.5*1E8,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
 			price:    0.0080,
-			quantity: 13,
+			quantity: 13*1E8,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
 			price:    0.0081,
-			quantity: 15.6,
+			quantity: 15.6*1E8,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
 			price:    0.0082,
-			quantity: 18.1,
+			quantity: 18.1*1E8,
 			side:     xudrpc.OrderSide_SELL,
 		},
 		{
 			price:    0.0083,
-			quantity: 22.3,
+			quantity: 22.3*1E8,
 			side:     xudrpc.OrderSide_SELL,
 		},
 	}
@@ -143,7 +143,7 @@ func placeOrders() error {
 	case "2.5@0.0079":
 		order := placeOrderParameters{
 			price:    0.0079,
-			quantity: 2.5,
+			quantity: 2.5*1E8,
 			side:     xudrpc.OrderSide_BUY,
 		}
 		err := fillOrKill(order)
@@ -155,7 +155,7 @@ func placeOrders() error {
 	case "3.5@0.0077":
 		order := placeOrderParameters{
 			price:    0.0077,
-			quantity: 3.5,
+			quantity: 3.5*1E8,
 			side:     xudrpc.OrderSide_SELL,
 		}
 		err := fillOrKill(order)
@@ -268,11 +268,11 @@ func orderAdded(newOrder xudrpc.Order) {
 		log.Debug("Order added: %v", newOrder)
 		break
 	case "2.5@0.0079":
-		if newOrder.Price == 0.0079 && newOrder.Quantity == 2.5 && !newOrder.IsOwnOrder && newOrder.Side == xudrpc.OrderSide_SELL {
+		if newOrder.Price == 0.0079 && newOrder.Quantity == 2.5*1E8 && !newOrder.IsOwnOrder && newOrder.Side == xudrpc.OrderSide_SELL {
 			log.Debug("Order detected: %v", newOrder)
 			order := placeOrderParameters{
 				price:    0.0079,
-				quantity: 2.5,
+				quantity: 2.5*1E8,
 				side:     xudrpc.OrderSide_BUY,
 			}
 			err := fillOrKill(order)
@@ -283,11 +283,11 @@ func orderAdded(newOrder xudrpc.Order) {
 			break
 		}
 	case "3.5@0.0077":
-		if newOrder.Price == 0.0077 && newOrder.Quantity == 3.5 && !newOrder.IsOwnOrder && newOrder.Side == xudrpc.OrderSide_BUY {
+		if newOrder.Price == 0.0077 && newOrder.Quantity == 3.5*1E8 && !newOrder.IsOwnOrder && newOrder.Side == xudrpc.OrderSide_BUY {
 			log.Debug("Order detected: %v", newOrder)
 			order := placeOrderParameters{
 				price:    0.0077,
-				quantity: 3.5,
+				quantity: 3.5*1E8,
 				side:     xudrpc.OrderSide_SELL,
 			}
 			err := fillOrKill(order)
