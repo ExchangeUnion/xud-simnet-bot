@@ -26,8 +26,8 @@ type Xud struct {
 }
 
 // OrderRemoved is a callback that allows clients to get notified about order removals
-type OrderRemoved func(order xudrpc.OrderRemoval)
-type OrderAdded func(order xudrpc.Order)
+type OrderRemoved func(order xudrpc.OrderUpdate)
+type OrderAdded func(order xudrpc.OrderUpdate)
 
 // Init to a XUD node
 func (xud *Xud) Init() error {
@@ -65,7 +65,7 @@ func (xud *Xud) PlaceOrderSync(request xudrpc.PlaceOrderRequest) (*xudrpc.PlaceO
 
 // SubscribeRemovedOrders notifies the Client via a callback about removed orders
 func (xud *Xud) SubscribeRemovedOrders(callback OrderRemoved) error {
-	stream, streamErr := xud.Client.SubscribeRemovedOrders(xud.Ctx, &xudrpc.SubscribeRemovedOrdersRequest{})
+	stream, streamErr := xud.Client.SubscribeOrders(xud.Ctx, &xudrpc.SubscribeOrdersRequest{})
 
 	if streamErr != nil {
 		return streamErr
@@ -99,7 +99,7 @@ func (xud *Xud) SubscribeRemovedOrders(callback OrderRemoved) error {
 
 // SubscribeRemovedOrders notifies the Client via a callback about removed orders
 func (xud *Xud) SubscribeAddedOrders(callback OrderAdded) error {
-	stream, streamErr := xud.Client.SubscribeAddedOrders(xud.Ctx, &xudrpc.SubscribeAddedOrdersRequest{})
+	stream, streamErr := xud.Client.SubscribeOrders(xud.Ctx, &xudrpc.SubscribeOrdersRequest{})
 
 	if streamErr != nil {
 		return streamErr
