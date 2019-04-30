@@ -156,8 +156,8 @@ func placeOrders() error {
 		for _, order := range orders {
 			err := placeOrder(order)
 			if err != nil {
-				log.Errorf("Could not place orders: %v - %v", order, err)
-				return err
+			//	log.Errorf("Could not place orders: %v - %v", order, err)
+			//	return err
 			}
 		}
 		log.Debug("Placed orders")
