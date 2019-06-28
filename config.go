@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/ExchangeUnion/xud-tests/ethclient"
 	"github.com/ExchangeUnion/xud-tests/lndclient"
+	"github.com/ExchangeUnion/xud-tests/raidenclient"
 	"github.com/ExchangeUnion/xud-tests/slackclient"
 	"github.com/ExchangeUnion/xud-tests/xudclient"
 	"github.com/jessevdk/go-flags"
@@ -27,11 +29,13 @@ type config struct {
 	ConfigPath string `long:"configpath" description:"Path to the config file"`
 	LogPath    string `long:"logpath" description:"Path to the log file"`
 
-	DisableTrading        bool `long:"disabletrading" description:"Whether to disable the trading bot"`
-	DisableChannelManager bool `long:"disablechannelmanager" description:"Whether to disable the channel manager"`
-	TradingMode string `long:"tradingmode" description:"Which trading mode should be used by the bot"`
+	DisableTrading        bool   `long:"disabletrading" description:"Whether to disable the trading bot"`
+	DisableChannelManager bool   `long:"disablechannelmanager" description:"Whether to disable the channel manager"`
+	TradingMode           string `long:"tradingmode" description:"Which trading mode should be used by the bot"`
 
 	Xud *xudclient.Xud `group:"XUD"`
+
+	Ethereum *ethclient.Ethereum `group:"ETH"`
 
 	Slack *slackclient.Slack `group:"Slack"`
 
@@ -39,9 +43,14 @@ type config struct {
 }
 
 // XUD config types
+type lndConfigs struct {
+	Btc *lndclient.Lnd `toml:"BTC"`
+	Ltc *lndclient.Lnd `toml:"LTC"`
+}
+
 type xudConfig struct {
-	LndBtc *lndclient.Lnd `toml:"lndbtc"`
-	LndLtc *lndclient.Lnd `toml:"lndltc"`
+	LndConfigs *lndConfigs          `toml:"lnd"`
+	Raiden     *raidenclient.Raiden `toml:"raiden"`
 }
 
 var cfg = config{}
@@ -96,13 +105,14 @@ func initConfig() error {
 	if err != nil {
 		return err
 	}
+
 	// TODO: if LndBtc or LndLtc are disable - you better fail the bot.
-	if !xudCfg.LndBtc.Disable {
-		setXudLndDefaultValues(xudCfg.LndBtc, true)
+	if !xudCfg.LndConfigs.Btc.Disable {
+		setXudLndDefaultValues(xudCfg.LndConfigs.Btc, true)
 	}
 
-	if !xudCfg.LndLtc.Disable {
-		setXudLndDefaultValues(xudCfg.LndLtc, false)
+	if !xudCfg.LndConfigs.Ltc.Disable {
+		setXudLndDefaultValues(xudCfg.LndConfigs.Ltc, false)
 	}
 
 	if cfg.TradingMode == "" {

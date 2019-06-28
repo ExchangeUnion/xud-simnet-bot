@@ -1,4 +1,4 @@
-package channels
+package lndchannels
 
 import (
 	"encoding/gob"
@@ -23,7 +23,7 @@ type channelType struct {
 	channelPoint string
 }
 
-const newChannelAmt = 25*100000000
+const newChannelAmt = 25 * 100000000
 
 // channelCloseTimeout defines after how many seconds a channel times out and should be closed
 const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)

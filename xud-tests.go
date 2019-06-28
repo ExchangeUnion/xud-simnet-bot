@@ -5,8 +5,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ExchangeUnion/xud-tests/channels"
+	"github.com/ExchangeUnion/xud-tests/lndchannels"
 	"github.com/ExchangeUnion/xud-tests/lndclient"
+	"github.com/ExchangeUnion/xud-tests/raidenchannels"
 	"github.com/ExchangeUnion/xud-tests/trading"
 )
 
@@ -22,28 +23,40 @@ func main() {
 	}
 
 	cfg.Slack.InitSlack()
+	err := cfg.Xud.Init()
 
 	if !cfg.DisableTrading {
 		log.Infof("Starting trading bot with %v mode", cfg.TradingMode)
 
-		xud := cfg.Xud
-
-		err := xud.Init()
-
 		if err == nil {
-			trading.InitTradingBot(&wg, xud, cfg.TradingMode)
+			trading.InitTradingBot(&wg, cfg.Xud, cfg.TradingMode)
 		} else {
 			printErrorAndExit("Could not read required files for XUD:", err)
 		}
 	}
 
 	if !cfg.DisableChannelManager {
-		if !xudCfg.LndBtc.Disable {
-			initChannelManager(xudCfg.LndBtc, true)
+		if !xudCfg.LndConfigs.Btc.Disable {
+			initChannelManager(xudCfg.LndConfigs.Btc, true)
 		}
 
-		if !xudCfg.LndLtc.Disable {
-			initChannelManager(xudCfg.LndLtc, false)
+		if !xudCfg.LndConfigs.Ltc.Disable {
+			initChannelManager(xudCfg.LndConfigs.Ltc, false)
+		}
+
+		if !xudCfg.Raiden.Disable {
+			log.Info("Starting Raiden channel manager")
+
+			err := cfg.Ethereum.Init()
+
+			if err != nil {
+				log.Error("Could not start Ethereum client: ", err)
+				return
+			}
+
+			xudCfg.Raiden.Init()
+
+			raidenchannels.InitChannelManager(&wg, cfg.Xud, xudCfg.Raiden, cfg.Ethereum, cfg.Slack)
 		}
 	}
 
@@ -63,7 +76,7 @@ func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
 	err := lnd.Init()
 
 	if err == nil {
-		channels.InitChannelManager(&wg, lnd, cfg.Slack, cfg.DataDir, nodeName)
+		lndchannels.InitChannelManager(&wg, lnd, cfg.Slack, cfg.DataDir, nodeName)
 	} else {
 		printErrorAndExit("Could not read required files for", nodeName, ":", err)
 	}

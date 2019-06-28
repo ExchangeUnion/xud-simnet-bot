@@ -59,3 +59,7 @@
 [[constraint]]
   name = "github.com/nlopes/slack"
   version = "0.4.0"
+
+[[constraint]]
+  name = "github.com/ethereum/go-ethereum"
+  version = "1.8.27"
