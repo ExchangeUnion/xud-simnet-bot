@@ -31,7 +31,7 @@ var channelTokens = []token{
 	},
 }
 
-var raidenChannels = make(map[string]bool)
+var hasRaidenChannels = make(map[string]bool)
 
 // InitChannelManager initializes a new Raiden channel manager
 func InitChannelManager(
@@ -62,7 +62,7 @@ func InitChannelManager(
 				break
 
 			case <-dailyTicker.C:
-				raidenChannels = make(map[string]bool)
+				hasRaidenChannels = make(map[string]bool)
 				initRaidenChannelsMap(raiden)
 				break
 			}
@@ -83,7 +83,7 @@ func initRaidenChannelsMap(raiden *raidenclient.Raiden) {
 	}
 
 	for _, channel := range channels {
-		raidenChannels[channel.PartnerAddress] = true
+		hasRaidenChannels[channel.PartnerAddress] = true
 	}
 }
 
@@ -98,16 +98,17 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 	}
 
 	for _, peer := range peers.Peers {
-		_, hasChannels := raidenChannels[peer.RaidenAddress]
+		_, hasChannels := hasRaidenChannels[peer.RaidenAddress]
 
 		if !hasChannels {
-			raidenChannels[peer.RaidenAddress] = true
 			openChannel(raiden, eth, slack, peer.RaidenAddress)
 		}
 	}
 }
 
 func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress string) {
+	hasRaidenChannels[partnerAddress] = true
+
 	for tokenIndex := range channelTokens {
 		go func(token token) {
 			err := eth.SendEth(partnerAddress, big.NewInt(100000000000000000))
@@ -119,8 +120,7 @@ func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, slack *sl
 				slack.SendMessage(message)
 			}
 
-			// TODO: which value should be used for the settle timeout?
-			_, err = raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, 512)
+			_, err = raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, 500)
 
 			message := "Opened " + token.address + " channel to " + partnerAddress
 
