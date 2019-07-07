@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"io/ioutil"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -55,7 +56,8 @@ func (eth *Ethereum) Init() error {
 		return err
 	}
 
-	privateKey, err := crypto.HexToECDSA(string(rawPrivateKey))
+	stringPrivateKey := strings.TrimSuffix(string(rawPrivateKey), "\n")
+	privateKey, err := crypto.HexToECDSA(stringPrivateKey)
 
 	if err != nil {
 		return err

@@ -50,7 +50,7 @@ func main() {
 			err := cfg.Ethereum.Init()
 
 			if err != nil {
-				log.Error("Could not start Ethereum client: ", err)
+				log.Error("Could not start Ethereum client: %v", err)
 				return
 			}
 
