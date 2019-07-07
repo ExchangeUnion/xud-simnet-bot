@@ -6,12 +6,15 @@ import (
 	"io/ioutil"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	geth "github.com/ethereum/go-ethereum/ethclient"
 )
+
+var sendLock = &sync.Mutex{}
 
 // 1 gwei is enough for our simnet
 var gasPrice = big.NewInt(1000000000)
@@ -76,6 +79,8 @@ func (eth *Ethereum) Init() error {
 
 // SendEth sends a specific amount of Ethereum to a given address
 func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
+	sendLock.Lock()
+
 	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.address)
 
 	if err != nil {
@@ -92,6 +97,8 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	}
 
 	err = eth.client.SendTransaction(context.Background(), tx)
+
+	sendLock.Unlock()
 
 	return err
 }
