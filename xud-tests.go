@@ -56,7 +56,7 @@ func main() {
 
 			xudCfg.Raiden.Init()
 
-			raidenchannels.InitChannelManager(&wg, cfg.Xud, xudCfg.Raiden, cfg.Ethereum, cfg.Slack)
+			raidenchannels.InitChannelManager(&wg, cfg.Xud, xudCfg.Raiden, cfg.Ethereum, cfg.Slack, cfg.EnableBalancing)
 		}
 	}
 

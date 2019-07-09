@@ -39,7 +39,8 @@ func InitChannelManager(
 	xud *xudclient.Xud,
 	raiden *raidenclient.Raiden,
 	eth *ethclient.Ethereum,
-	slack *slackclient.Slack) {
+	slack *slackclient.Slack,
+	enableBalancing bool) {
 
 	wg.Add(1)
 
@@ -52,13 +53,19 @@ func InitChannelManager(
 		defer wg.Done()
 
 		openChannels(xud, raiden, eth, slack)
-		balanceChannels(raiden, slack)
+
+		if enableBalancing {
+			balanceChannels(raiden, slack)
+		}
 
 		for {
 			select {
 			case <-secondTicker.C:
 				openChannels(xud, raiden, eth, slack)
-				balanceChannels(raiden, slack)
+
+				if enableBalancing {
+					balanceChannels(raiden, slack)
+				}
 				break
 
 			case <-dailyTicker.C:
