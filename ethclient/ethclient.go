@@ -2,15 +2,15 @@ package ethclient
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"io/ioutil"
 	"math/big"
-	"strings"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts"
+
+	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	geth "github.com/ethereum/go-ethereum/ethclient"
 	"golang.org/x/crypto/sha3"
 )
@@ -25,14 +25,15 @@ var erc20TransferGasLimit = uint64(50000)
 
 // Ethereum represents an Ethereum client
 type Ethereum struct {
-	RPCHost        string `long:"eth.rpchost" description:"Host of the RPC interface of an Ethereum client"`
-	PrivateKeyPath string `long:"eth.privkey" description:"Path to the private key of a Ethereum address"`
+	RPCHost      string `long:"eth.rpchost" description:"Host of the RPC interface of an Ethereum client"`
+	KeystorePath string `long:"eth.keystore" description:"Path to the keystore of the Ethereum address"`
+	Password     string `long:"eth.password" description:"Password of the keystore"`
 
-	client        *geth.Client
-	chainIDSigner types.EIP155Signer
+	client  *geth.Client
+	chainID *big.Int
 
-	privateKey *ecdsa.PrivateKey
-	address    common.Address
+	keystore *keystore.KeyStore
+	account  accounts.Account
 }
 
 // Init initializes a new Ethereum client
@@ -52,29 +53,24 @@ func (eth *Ethereum) Init() error {
 		return err
 	}
 
-	eth.chainIDSigner = types.NewEIP155Signer(chainID)
+	eth.chainID = chainID
 
-	// Load the private key from the file
-	rawPrivateKey, err := ioutil.ReadFile(eth.PrivateKeyPath)
-
-	if err != nil {
-		return err
-	}
-
-	stringPrivateKey := strings.TrimSuffix(string(rawPrivateKey), "\n")
-	privateKey, err := crypto.HexToECDSA(stringPrivateKey)
+	// Load the keystore from the file
+	rawKeyStore, err := ioutil.ReadFile(eth.KeystorePath)
 
 	if err != nil {
 		return err
 	}
 
-	eth.privateKey = privateKey
+	keystore := keystore.NewKeyStore("./tmp", keystore.StandardScryptN, keystore.StandardScryptP)
+	account, err := keystore.Import(rawKeyStore, eth.Password, eth.Password)
 
-	// Get the address of the private key
-	publicKey := privateKey.Public()
-	publicKeyEcdsa := publicKey.(*ecdsa.PublicKey)
+	if err != nil {
+		return err
+	}
 
-	eth.address = crypto.PubkeyToAddress(*publicKeyEcdsa)
+	eth.keystore = keystore
+	eth.account = account
 
 	return nil
 }
@@ -83,7 +79,7 @@ func (eth *Ethereum) Init() error {
 func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	sendLock.Lock()
 
-	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.address)
+	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.account.Address)
 
 	if err != nil {
 		sendLock.Unlock()
@@ -93,7 +89,7 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	toAddress := common.HexToAddress(address)
 
 	tx := types.NewTransaction(nonce, toAddress, amount, ethTransferGasLimit, gasPrice, nil)
-	tx, err = types.SignTx(tx, eth.chainIDSigner, eth.privateKey)
+	tx, err = eth.keystore.SignTx(eth.account, tx, eth.chainID)
 
 	if err != nil {
 		sendLock.Unlock()
@@ -111,7 +107,7 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 func (eth *Ethereum) SendToken(token string, recipient string, amount string) (*types.Transaction, error) {
 	sendLock.Lock()
 
-	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.address)
+	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.account.Address)
 
 	if err != nil {
 		sendLock.Unlock()
@@ -141,7 +137,7 @@ func (eth *Ethereum) SendToken(token string, recipient string, amount string) (*
 	data = append(data, paddedAmount...)
 
 	tx := types.NewTransaction(nonce, tokenAddress, big.NewInt(0), erc20TransferGasLimit, gasPrice, data)
-	tx, err = types.SignTx(tx, eth.chainIDSigner, eth.privateKey)
+	tx, err = eth.keystore.SignTx(eth.account, tx, eth.chainID)
 
 	if err != nil {
 		sendLock.Unlock()
