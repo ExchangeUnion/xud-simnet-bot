@@ -105,10 +105,12 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 	}
 
 	for _, peer := range peers.Peers {
-		_, hasChannels := hasRaidenChannels[peer.RaidenAddress]
+		if peer.RaidenAddress != "" {
+			_, hasChannels := hasRaidenChannels[peer.RaidenAddress]
 
-		if !hasChannels {
-			openChannel(raiden, eth, slack, peer.RaidenAddress)
+			if !hasChannels {
+				openChannel(raiden, eth, slack, peer.RaidenAddress)
+			}
 		}
 	}
 }
@@ -116,23 +118,29 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress string) {
 	hasRaidenChannels[partnerAddress] = true
 
+	err := eth.SendEth(partnerAddress, big.NewInt(100000000000000000))
+
+	if err != nil {
+		message := "Could not send ETH to " + partnerAddress + ": " + err.Error()
+
+		log.Warning(message)
+		slack.SendMessage(message)
+	}
+
 	for tokenIndex := range channelTokens {
 		go func(token token) {
-			err := eth.SendEth(partnerAddress, big.NewInt(100000000000000000))
-
-			if err != nil {
-				message := "Could not send ETH to " + partnerAddress + ": " + err.Error()
-
-				log.Warning(message)
-				slack.SendMessage(message)
-			}
-
-			_, err = raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, 500)
+			_, err := raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, 500)
 
 			message := "Opened " + token.address + " channel to " + partnerAddress
 
 			if err != nil {
 				message = "Could not open Raiden channel: " + err.Error()
+			}
+
+			_, err = raiden.SendPayment(partnerAddress, token.address, token.channelAmount/2)
+
+			if err != nil {
+				message = "Could send half of the capacity to other side: " + err.Error()
 			}
 
 			log.Info(message)
