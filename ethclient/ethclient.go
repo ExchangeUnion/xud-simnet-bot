@@ -2,6 +2,7 @@ package ethclient
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"sync"
@@ -65,6 +66,8 @@ func (eth *Ethereum) Init() error {
 	keystore := keystore.NewKeyStore("./tmp", keystore.StandardScryptN, keystore.StandardScryptP)
 	account, err := keystore.Import(rawKeyStore, eth.Password, eth.Password)
 
+	keystore.Unlock(account, eth.Password)
+
 	if err != nil {
 		return err
 	}
@@ -80,6 +83,8 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	sendLock.Lock()
 
 	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.account.Address)
+
+	fmt.Println(err)
 
 	if err != nil {
 		sendLock.Unlock()
