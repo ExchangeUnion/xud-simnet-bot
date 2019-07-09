@@ -3,3 +3,4 @@ vendor/
 
 # Compiled binaries
 xud-tests
+erc20/erc20sender

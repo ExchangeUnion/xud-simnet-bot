@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	geth "github.com/ethereum/go-ethereum/ethclient"
+	"golang.org/x/crypto/sha3"
 )
 
 var sendLock = &sync.Mutex{}
@@ -20,6 +21,7 @@ var sendLock = &sync.Mutex{}
 var gasPrice = big.NewInt(1000000000)
 
 var ethTransferGasLimit = uint64(21000)
+var erc20TransferGasLimit = uint64(50000)
 
 // Ethereum represents an Ethereum client
 type Ethereum struct {
@@ -77,13 +79,14 @@ func (eth *Ethereum) Init() error {
 	return nil
 }
 
-// SendEth sends a specific amount of Ethereum to a given address
+// SendEth sends a specific amount of Ether to a given address
 func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	sendLock.Lock()
 
 	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.address)
 
 	if err != nil {
+		sendLock.Unlock()
 		return err
 	}
 
@@ -93,6 +96,7 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	tx, err = types.SignTx(tx, eth.chainIDSigner, eth.privateKey)
 
 	if err != nil {
+		sendLock.Unlock()
 		return err
 	}
 
@@ -101,4 +105,52 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	sendLock.Unlock()
 
 	return err
+}
+
+// SendToken send a specific amount of a token to a given address
+func (eth *Ethereum) SendToken(token string, recipient string, amount string) (*types.Transaction, error) {
+	sendLock.Lock()
+
+	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.address)
+
+	if err != nil {
+		sendLock.Unlock()
+		return nil, err
+	}
+
+	tokenAddress := common.HexToAddress(token)
+	recipientAddress := common.HexToAddress(recipient)
+
+	transferFunctionSignature := []byte("transfer(address,uint256)")
+
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(transferFunctionSignature)
+
+	methodID := hash.Sum(nil)[:4]
+	paddedAddress := common.LeftPadBytes(recipientAddress.Bytes(), 32)
+
+	tokenAmount := new(big.Int)
+	tokenAmount.SetString(amount, 10)
+
+	paddedAmount := common.LeftPadBytes(tokenAmount.Bytes(), 32)
+
+	var data []byte
+
+	data = append(data, methodID...)
+	data = append(data, paddedAddress...)
+	data = append(data, paddedAmount...)
+
+	tx := types.NewTransaction(nonce, tokenAddress, big.NewInt(0), erc20TransferGasLimit, gasPrice, data)
+	tx, err = types.SignTx(tx, eth.chainIDSigner, eth.privateKey)
+
+	if err != nil {
+		sendLock.Unlock()
+		return nil, err
+	}
+
+	err = eth.client.SendTransaction(context.Background(), tx)
+
+	sendLock.Unlock()
+
+	return nil, err
 }
