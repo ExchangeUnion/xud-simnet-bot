@@ -77,6 +77,13 @@ func (eth *Ethereum) Init() error {
 	return nil
 }
 
+// EthBalance gets the Ether balance of an address
+func (eth *Ethereum) EthBalance(address string) (*big.Int, error) {
+	account := common.HexToAddress(address)
+
+	return eth.client.BalanceAt(context.Background(), account, nil)
+}
+
 // SendEth sends a specific amount of Ether to a given address
 func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	sendLock.Lock()
