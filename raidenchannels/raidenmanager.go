@@ -71,6 +71,7 @@ func InitChannelManager(
 				break
 
 			case <-dailyTicker.C:
+				log.Info("Resetting Raiden channel map")
 				raidenChannelsMap = make(map[string]map[string]bool)
 				initRaidenChannelsMap(raiden)
 				break
@@ -118,6 +119,8 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 				if !hasChannel {
 					sendEther(eth, slack, peer.RaidenAddress)
 					openChannel(raiden, slack, token, peer.RaidenAddress)
+				} else {
+					log.Debug(peer.RaidenAddress + " already has a " + token.address + " channel. Skipping")
 				}
 			}
 		}
@@ -141,14 +144,17 @@ func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress
 
 		sendMesssage(
 			slack,
-			"Sent ETH to "+partnerAddress,
-			"Could not send ETH to "+partnerAddress+": "+err.Error(),
+			"Sent Ether to "+partnerAddress,
+			"Could not send Ether to "+partnerAddress+": "+err.Error(),
 			err,
 		)
 
 		if err != nil {
 			return
 		}
+	} else {
+		etherBalance := new(big.Float).Quo(new(big.Float).SetInt(balance), big.NewFloat(1000000000000000000))
+		log.Debug("Not sending Ether to " + partnerAddress + " because it has a balance of: " + etherBalance.String())
 	}
 }
 
@@ -161,7 +167,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 		sendMesssage(
 			slack,
 			"Opened "+token.address+" channel to "+partnerAddress,
-			"Could not open Raiden channel: "+err.Error(),
+			"Could not open "+token.address+" channel to "+partnerAddress+": "+err.Error(),
 			err,
 		)
 
@@ -174,7 +180,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 		sendMesssage(
 			slack,
 			"Sent half of "+token.address+"channel capacity to "+partnerAddress,
-			"Could send half of the capacity to other side: "+err.Error(),
+			"Could send half of "+token.address+" to "+partnerAddress+": "+err.Error(),
 			err,
 		)
 	}()
