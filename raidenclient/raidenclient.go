@@ -22,15 +22,15 @@ type Raiden struct {
 
 // Channel contains information about a Raiden channel and is used a response in multiple calls
 type Channel struct {
-	TokenNetworkIdentifer string `json:"token_network_identifier"`
-	ChannelIdentifier     uint   `json:"channel_identifier"`
-	PartnerAddress        string `json:"partner_address"`
-	TokenAddress          string `json:"token_address"`
-	Balance               uint64 `json:"balance"`
-	TotalDeposit          uint64 `json:"total_deposit"`
-	State                 string `json:"state"`
-	SettleTimeout         uint   `json:"settle_timeout"`
-	RevealTimeout         uint   `json:"reveal_timeout"`
+	TokenNetworkIdentifer string  `json:"token_network_identifier"`
+	ChannelIdentifier     uint    `json:"channel_identifier"`
+	PartnerAddress        string  `json:"partner_address"`
+	TokenAddress          string  `json:"token_address"`
+	Balance               float64 `json:"balance"`
+	TotalDeposit          uint64  `json:"total_deposit"`
+	State                 string  `json:"state"`
+	SettleTimeout         uint    `json:"settle_timeout"`
+	RevealTimeout         uint    `json:"reveal_timeout"`
 }
 
 // SendPaymentResponse is the reponse of the "SendPayment" call of Raiden
@@ -98,7 +98,7 @@ func (raiden *Raiden) ListTokens() ([]string, error) {
 }
 
 // SendPayment send coins to the target address
-func (raiden *Raiden) SendPayment(targetAddress string, tokenAddress string, amount uint64) (SendPaymentResponse, error) {
+func (raiden *Raiden) SendPayment(targetAddress string, tokenAddress string, amount float64) (SendPaymentResponse, error) {
 	var response SendPaymentResponse
 
 	responseBody, err := raiden.makeHTTPRequest(
@@ -119,7 +119,7 @@ func (raiden *Raiden) SendPayment(targetAddress string, tokenAddress string, amo
 }
 
 // OpenChannel opens a new channel
-func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, totalDeposit uint64, settleTimeout uint64) (Channel, error) {
+func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, totalDeposit float64, settleTimeout uint64) (Channel, error) {
 	var response Channel
 
 	responseBody, err := raiden.makeHTTPRequest(

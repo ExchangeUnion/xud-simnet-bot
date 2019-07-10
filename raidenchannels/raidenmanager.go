@@ -17,17 +17,19 @@ import (
 
 type token struct {
 	address       string
-	channelAmount uint64
+	channelAmount float64
 }
 
 var channelTokens = []token{
+	// WETH token
 	{
 		address:       "0x9F50cEA29307d7D91c5176Af42f3aB74f0190dD3",
-		channelAmount: 1000000000000000,
+		channelAmount: 10e21,
 	},
+	// DAI token
 	{
 		address:       "0x76671A2831Dc0aF53B09537dea57F1E22899655d",
-		channelAmount: 2000000000000000,
+		channelAmount: 3.25 * 10e23,
 	},
 }
 
@@ -191,8 +193,8 @@ func balanceChannels(raiden *raidenclient.Raiden, slack *slackclient.Slack) {
 
 		for _, channel := range channels {
 			// If more than 80% of the balance is on our side it is time to rebalance the channel
-			if float64(channel.Balance)/float64(channel.TotalDeposit) > float64(0.8) {
-				_, err := raiden.SendPayment(channel.PartnerAddress, channel.TokenAddress, channel.Balance-channel.TotalDeposit/2)
+			if channel.Balance/token.channelAmount > float64(0.8) {
+				_, err := raiden.SendPayment(channel.PartnerAddress, channel.TokenAddress, channel.Balance-(token.channelAmount/float64(2)))
 
 				message := "Rebalanced " + token.address + " channel with " + channel.PartnerAddress
 
