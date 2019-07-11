@@ -27,7 +27,7 @@ type Channel struct {
 	PartnerAddress        string  `json:"partner_address"`
 	TokenAddress          string  `json:"token_address"`
 	Balance               float64 `json:"balance"`
-	TotalDeposit          uint64  `json:"total_deposit"`
+	TotalDeposit          float64 `json:"total_deposit"`
 	State                 string  `json:"state"`
 	SettleTimeout         uint    `json:"settle_timeout"`
 	RevealTimeout         uint    `json:"reveal_timeout"`

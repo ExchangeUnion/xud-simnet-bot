@@ -1,9 +1,13 @@
 package raidenchannels
 
 import (
+	"fmt"
 	"math/big"
+	"path"
 	"sync"
 	"time"
+
+	"github.com/ExchangeUnion/xud-tests/xudrpc"
 
 	"github.com/ExchangeUnion/xud-tests/ethclient"
 
@@ -12,8 +16,6 @@ import (
 	"github.com/ExchangeUnion/xud-tests/raidenclient"
 	"github.com/ExchangeUnion/xud-tests/slackclient"
 )
-
-// TODO: clean inactive channels
 
 type token struct {
 	address       string
@@ -33,6 +35,11 @@ var channelTokens = []token{
 	},
 }
 
+// channelCloseTimeout defines after how many seconds a channel times out and should be closed
+const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
+
+var inactiveTimes = make(map[string]time.Time)
+
 var raidenChannelsMap = make(map[string]map[string]bool)
 
 // InitChannelManager initializes a new Raiden channel manager
@@ -42,9 +49,14 @@ func InitChannelManager(
 	raiden *raidenclient.Raiden,
 	eth *ethclient.Ethereum,
 	slack *slackclient.Slack,
+	dataDir string,
 	enableBalancing bool) {
 
 	wg.Add(1)
+
+	dataPath := path.Join(dataDir, "raiden.dat")
+
+	readInactiveTimes(dataPath)
 
 	initRaidenChannelsMap(raiden)
 
@@ -54,7 +66,7 @@ func InitChannelManager(
 	go func() {
 		defer wg.Done()
 
-		openChannels(xud, raiden, eth, slack)
+		openChannels(xud, raiden, eth, slack, dataPath)
 
 		if enableBalancing {
 			balanceChannels(raiden, slack)
@@ -63,7 +75,7 @@ func InitChannelManager(
 		for {
 			select {
 			case <-secondTicker.C:
-				openChannels(xud, raiden, eth, slack)
+				openChannels(xud, raiden, eth, slack, dataPath)
 
 				if enableBalancing {
 					balanceChannels(raiden, slack)
@@ -96,10 +108,12 @@ func initRaidenChannelsMap(raiden *raidenclient.Raiden) {
 		for _, channel := range channels {
 			raidenChannelsMap[token.address][channel.PartnerAddress] = true
 		}
+
+		log.Debug("Initialized token: " + token.address)
 	}
 }
 
-func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclient.Ethereum, slack *slackclient.Slack) {
+func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclient.Ethereum, slack *slackclient.Slack, dataPath string) {
 	log.Debug("Checking XUD for new Raiden partner addresses")
 
 	peers, err := xud.ListPeers()
@@ -114,7 +128,7 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 
 		for _, peer := range peers.Peers {
 			if peer.RaidenAddress != "" {
-				_, hasChannel := channelMap[peer.RaidenAddress]
+				hasChannel := channelMap[peer.RaidenAddress]
 
 				if !hasChannel {
 					sendEther(eth, slack, peer.RaidenAddress)
@@ -125,6 +139,42 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 			}
 		}
 	}
+
+	updateInactiveTimes(peers.Peers, raiden, slack, dataPath)
+}
+
+func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slack *slackclient.Slack, dataPath string) {
+	// Remove peers that are active from the map
+	for _, peer := range peers {
+		delete(inactiveTimes, peer.RaidenAddress)
+	}
+
+	now := time.Now()
+
+	for partnerAddress, lastSeen := range inactiveTimes {
+		if now.Sub(lastSeen) > channelCloseTimeout {
+			go func() {
+				for _, token := range channelTokens {
+					_, err := raiden.CloseChannel(partnerAddress, token.address)
+
+					raidenChannelsMap[token.address][partnerAddress] = false
+
+					sendMesssage(
+						slack,
+						"Closed "+token.address+" channel to "+partnerAddress,
+						"Could not close "+token.address+" channel to "+partnerAddress,
+						err,
+					)
+				}
+			}()
+
+			delete(inactiveTimes, partnerAddress)
+		} else {
+			inactiveTimes[partnerAddress] = now
+		}
+	}
+
+	saveInactiveTimes(dataPath)
 }
 
 func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress string) {
@@ -145,7 +195,7 @@ func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress
 		sendMesssage(
 			slack,
 			"Sent Ether to "+partnerAddress,
-			"Could not send Ether to "+partnerAddress+": "+err.Error(),
+			"Could not send Ether to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
 		)
 
@@ -167,7 +217,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 		sendMesssage(
 			slack,
 			"Opened "+token.address+" channel to "+partnerAddress,
-			"Could not open "+token.address+" channel to "+partnerAddress+": "+err.Error(),
+			"Could not open "+token.address+" channel to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
 		)
 
@@ -180,7 +230,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 		sendMesssage(
 			slack,
 			"Sent half of "+token.address+"channel capacity to "+partnerAddress,
-			"Could send half of "+token.address+" to "+partnerAddress+": "+err.Error(),
+			"Could send half of "+token.address+" to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
 		)
 	}()
