@@ -2,8 +2,10 @@ package raidenchannels
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"path"
+	"strconv"
 	"sync"
 	"time"
 
@@ -225,7 +227,11 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 			return
 		}
 
-		_, err = raiden.SendPayment(partnerAddress, token.address, token.channelAmount/2)
+		paymentAmount := math.Round(token.channelAmount / 2)
+
+		log.Info("Sending " + strconv.FormatFloat(paymentAmount, 'f', -1, 64) + " " + token.address + " to " + partnerAddress)
+
+		_, err = raiden.SendPayment(partnerAddress, token.address, paymentAmount)
 
 		sendMesssage(
 			slack,
