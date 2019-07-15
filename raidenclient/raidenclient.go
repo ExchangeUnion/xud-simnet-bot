@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 // Raiden represents a client
@@ -46,6 +47,9 @@ type SendPaymentResponse struct {
 type RaidenError struct {
 	Errors string `json:"errors"`
 }
+
+var openLock = &sync.Mutex{}
+var closeLock = &sync.Mutex{}
 
 // Init the Raiden node
 func (raiden *Raiden) Init() {
@@ -120,6 +124,8 @@ func (raiden *Raiden) SendPayment(targetAddress string, tokenAddress string, amo
 
 // OpenChannel opens a new channel
 func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, totalDeposit float64, settleTimeout uint64) (Channel, error) {
+	openLock.Lock()
+
 	var response Channel
 
 	responseBody, err := raiden.makeHTTPRequest(
@@ -134,16 +140,21 @@ func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, to
 	)
 
 	if err != nil {
+		openLock.Unlock()
 		return response, err
 	}
 
 	err = json.Unmarshal(responseBody, &response)
+
+	openLock.Unlock()
 
 	return response, err
 }
 
 // CloseChannel closes a channel
 func (raiden *Raiden) CloseChannel(partnerAddress string, tokenAddress string) (Channel, error) {
+	closeLock.Lock()
+
 	var response Channel
 
 	responseBody, err := raiden.makeHTTPRequest(
@@ -155,10 +166,13 @@ func (raiden *Raiden) CloseChannel(partnerAddress string, tokenAddress string) (
 	)
 
 	if err != nil {
+		closeLock.Unlock()
 		return response, err
 	}
 
 	err = json.Unmarshal(responseBody, &response)
+
+	closeLock.Unlock()
 
 	return response, err
 }
