@@ -107,7 +107,7 @@ func (raiden *Raiden) SendPayment(targetAddress string, tokenAddress string, amo
 
 	responseBody, err := raiden.makeHTTPRequest(
 		http.MethodPost,
-		"payments/"+tokenAddress+targetAddress,
+		"payments/"+tokenAddress+"/"+targetAddress,
 		map[string]interface{}{
 			"amount": amount,
 		},
