@@ -3,7 +3,6 @@ package raidenchannels
 import (
 	"fmt"
 	"math"
-	"math/big"
 	"path"
 	"strconv"
 	"sync"
@@ -180,7 +179,7 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 }
 
 func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress string) {
-	balance, err := eth.EthBalance(partnerAddress)
+	/*balance, err := eth.EthBalance(partnerAddress)
 
 	if err != nil {
 		message := "Could not query Ether balance of " + partnerAddress + " : " + err.Error()
@@ -207,7 +206,7 @@ func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress
 	} else {
 		etherBalance := new(big.Float).Quo(new(big.Float).SetInt(balance), big.NewFloat(1000000000000000000))
 		log.Debug("Not sending Ether to " + partnerAddress + " because it has a balance of: " + etherBalance.String())
-	}
+	}*/
 }
 
 func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token token, partnerAddress string) {
