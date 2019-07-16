@@ -36,11 +36,11 @@ type Channel struct {
 
 // SendPaymentResponse is the reponse of the "SendPayment" call of Raiden
 type SendPaymentResponse struct {
-	InitiatorAddress string `json:"initiator_address"`
-	TargetAddress    string `json:"target_address"`
-	TokenAddress     string `json:"token_address"`
-	Amount           uint64 `json:"amount"`
-	Identifier       uint64 `json:"identifier"`
+	InitiatorAddress string  `json:"initiator_address"`
+	TargetAddress    string  `json:"target_address"`
+	TokenAddress     string  `json:"token_address"`
+	Amount           float64 `json:"amount"`
+	Identifier       uint64  `json:"identifier"`
 }
 
 // RaidenError allow to parse errors the Raiden API returns
