@@ -160,7 +160,7 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 
 					raidenChannelsMap[token.address][partnerAddress] = false
 
-					sendMesssage(
+					sendMessage(
 						slack,
 						"Closed "+token.address+" channel to "+partnerAddress,
 						"Could not close "+token.address+" channel to "+partnerAddress,
@@ -193,7 +193,7 @@ func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress
 	if balance.Cmp(big.NewInt(0)) == 0 {
 		err := eth.SendEth(partnerAddress, big.NewInt(1000000000000000000))
 
-		sendMesssage(
+		sendMessage(
 			slack,
 			"Sent Ether to "+partnerAddress,
 			"Could not send Ether to "+partnerAddress+": "+fmt.Sprint(err),
@@ -213,9 +213,16 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 	raidenChannelsMap[token.address][partnerAddress] = true
 
 	go func() {
+		sendMessage(
+			slack,
+			"About to open "+token.address+" channel to "+partnerAddress,
+			"",
+			nil,
+		)
+
 		_, err := raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, 500)
 
-		sendMesssage(
+		sendMessage(
 			slack,
 			"Opened "+token.address+" channel to "+partnerAddress,
 			"Could not open "+token.address+" channel to "+partnerAddress+": "+fmt.Sprint(err),
@@ -232,7 +239,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 
 		_, err = raiden.SendPayment(partnerAddress, token.address, paymentAmount)
 
-		sendMesssage(
+		sendMessage(
 			slack,
 			"Sent half of "+token.address+"channel capacity to "+partnerAddress,
 			"Could send half of "+token.address+" to "+partnerAddress+": "+fmt.Sprint(err),
@@ -270,7 +277,7 @@ func balanceChannels(raiden *raidenclient.Raiden, slack *slackclient.Slack) {
 	}
 }
 
-func sendMesssage(slack *slackclient.Slack, message string, errorMessage string, err error) {
+func sendMessage(slack *slackclient.Slack, message string, errorMessage string, err error) {
 	if err == nil {
 		log.Info(message)
 		slack.SendMessage(message)
