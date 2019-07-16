@@ -18,7 +18,6 @@ type Raiden struct {
 	Port int
 
 	endpoint string
-	client   *http.Client
 }
 
 // Channel contains information about a Raiden channel and is used a response in multiple calls
@@ -54,7 +53,6 @@ var closeLock = &sync.Mutex{}
 // Init the Raiden node
 func (raiden *Raiden) Init() {
 	raiden.endpoint = "http://" + raiden.Host + ":" + strconv.Itoa(raiden.Port) + "/api/v1/"
-	raiden.client = &http.Client{}
 }
 
 // ListChannels of either all tokens or the one specified
@@ -174,13 +172,17 @@ func (raiden *Raiden) CloseChannel(partnerAddress string, tokenAddress string) (
 }
 
 func (raiden *Raiden) makeHTTPRequest(method string, endpoint string, requestBody map[string]interface{}) ([]byte, error) {
+	httpClient := &http.Client{
+		Timeout: 0,
+	}
+
 	url := raiden.endpoint + endpoint
 
 	var response *http.Response
 	var err error
 
 	if method == http.MethodGet {
-		response, err = http.Get(url)
+		response, err = httpClient.Get(url)
 	} else {
 		jsonRequestBody, _ := json.Marshal(requestBody)
 
@@ -194,7 +196,7 @@ func (raiden *Raiden) makeHTTPRequest(method string, endpoint string, requestBod
 			return nil, err
 		}
 
-		response, err = raiden.client.Do(request)
+		response, err = httpClient.Do(request)
 	}
 
 	if err != nil {
