@@ -76,6 +76,7 @@ func (raiden *Raiden) ListChannels(tokenAddress string) ([]Channel, error) {
 	}
 
 	err = json.Unmarshal(responseBody, &response)
+	err = handleResponse(responseBody, err)
 
 	return response, err
 }
@@ -95,6 +96,7 @@ func (raiden *Raiden) ListTokens() ([]string, error) {
 	}
 
 	err = json.Unmarshal(responseBody, &response)
+	err = handleResponse(responseBody, err)
 
 	return response, err
 }
@@ -116,6 +118,7 @@ func (raiden *Raiden) SendPayment(targetAddress string, tokenAddress string, amo
 	}
 
 	err = json.Unmarshal(responseBody, &response)
+	err = handleResponse(responseBody, err)
 
 	return response, err
 }
@@ -143,6 +146,7 @@ func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, to
 	}
 
 	err = json.Unmarshal(responseBody, &response)
+	err = handleResponse(responseBody, err)
 
 	return response, err
 }
@@ -167,6 +171,7 @@ func (raiden *Raiden) CloseChannel(partnerAddress string, tokenAddress string) (
 	}
 
 	err = json.Unmarshal(responseBody, &response)
+	err = handleResponse(responseBody, err)
 
 	return response, err
 }
@@ -205,24 +210,14 @@ func (raiden *Raiden) makeHTTPRequest(method string, endpoint string, requestBod
 
 	defer response.Body.Close()
 
-	body, err := ioutil.ReadAll(response.Body)
+	return ioutil.ReadAll(response.Body)
+}
 
+func handleResponse(response []byte, err error) error {
+	// If the parsing of the response fails -> return the whole body of the response as error
 	if err != nil {
-		return nil, err
+		return errors.New(string(response))
 	}
 
-	var errorResponse RaidenError
-
-	err = json.Unmarshal(body, &errorResponse)
-
-	// When the parsing of the error fails there is no error
-	if err != nil {
-		return body, nil
-	}
-
-	if errorResponse.Errors != "" {
-		return nil, errors.New(errorResponse.Errors)
-	}
-
-	return body, err
+	return nil
 }
