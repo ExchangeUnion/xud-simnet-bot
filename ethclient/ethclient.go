@@ -87,11 +87,11 @@ func (eth *Ethereum) EthBalance(address string) (*big.Int, error) {
 // SendEth sends a specific amount of Ether to a given address
 func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	sendLock.Lock()
+	defer sendLock.Unlock()
 
 	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.account.Address)
 
 	if err != nil {
-		sendLock.Unlock()
 		return err
 	}
 
@@ -101,13 +101,10 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 	tx, err = eth.keystore.SignTx(eth.account, tx, eth.chainID)
 
 	if err != nil {
-		sendLock.Unlock()
 		return err
 	}
 
 	err = eth.client.SendTransaction(context.Background(), tx)
-
-	sendLock.Unlock()
 
 	return err
 }
@@ -115,11 +112,11 @@ func (eth *Ethereum) SendEth(address string, amount *big.Int) error {
 // SendToken send a specific amount of a token to a given address
 func (eth *Ethereum) SendToken(token string, recipient string, amount string) (*types.Transaction, error) {
 	sendLock.Lock()
+	defer sendLock.Unlock()
 
 	nonce, err := eth.client.PendingNonceAt(context.Background(), eth.account.Address)
 
 	if err != nil {
-		sendLock.Unlock()
 		return nil, err
 	}
 
@@ -149,13 +146,10 @@ func (eth *Ethereum) SendToken(token string, recipient string, amount string) (*
 	tx, err = eth.keystore.SignTx(eth.account, tx, eth.chainID)
 
 	if err != nil {
-		sendLock.Unlock()
 		return nil, err
 	}
 
 	err = eth.client.SendTransaction(context.Background(), tx)
-
-	sendLock.Unlock()
 
 	return nil, err
 }

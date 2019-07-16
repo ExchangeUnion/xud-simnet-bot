@@ -125,6 +125,7 @@ func (raiden *Raiden) SendPayment(targetAddress string, tokenAddress string, amo
 // OpenChannel opens a new channel
 func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, totalDeposit float64, settleTimeout uint64) (Channel, error) {
 	openLock.Lock()
+	defer openLock.Unlock()
 
 	var response Channel
 
@@ -140,13 +141,10 @@ func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, to
 	)
 
 	if err != nil {
-		openLock.Unlock()
 		return response, err
 	}
 
 	err = json.Unmarshal(responseBody, &response)
-
-	openLock.Unlock()
 
 	return response, err
 }
@@ -154,6 +152,7 @@ func (raiden *Raiden) OpenChannel(partnerAddress string, tokenAddress string, to
 // CloseChannel closes a channel
 func (raiden *Raiden) CloseChannel(partnerAddress string, tokenAddress string) (Channel, error) {
 	closeLock.Lock()
+	defer closeLock.Unlock()
 
 	var response Channel
 
@@ -166,13 +165,10 @@ func (raiden *Raiden) CloseChannel(partnerAddress string, tokenAddress string) (
 	)
 
 	if err != nil {
-		closeLock.Unlock()
 		return response, err
 	}
 
 	err = json.Unmarshal(responseBody, &response)
-
-	closeLock.Unlock()
 
 	return response, err
 }
