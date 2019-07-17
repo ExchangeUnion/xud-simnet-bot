@@ -138,7 +138,69 @@ func placeOrders() error {
 		// 	side:     xudrpc.OrderSide_SELL,
 		// 	pairID:   "BTC/DAI",
 		// },
-
+		
+		// LTC/BTC orders
+		{
+			price:    0.0077,
+			quantity: 3.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0076,
+			quantity: 15.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0075,
+			quantity: 18.0 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0074,
+			quantity: 21.25 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0073,
+			quantity: 24.0 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0079,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0080,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0081,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0082,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/BTC",
+		},
+		{
+			price:    0.0083,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/BTC",
+		},
+		
 		// LTC/DAI orders
 		{
 			price:    98,
