@@ -75,79 +75,195 @@ func subscribeRemovedOrders() error {
 }
 
 func placeOrders() error {
-
 	orders := []placeOrderParameters{
+		// BTC/DAI orders
 		{
-			price:    0.0305,
+			price:    9998,
 			quantity: 3.5 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairID:   "WETH/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0315,
-			quantity: 3.5 * 1E8,
-			side:     xudrpc.OrderSide_SELL,
-			pairID:   "WETH/BTC",
-		},
-		{
-			price:    0.0077,
-			quantity: 3.5 * 1E8,
-			side:     xudrpc.OrderSide_BUY,
-			pairID:   "LTC/BTC",
-		},
-		{
-			price:    0.0076,
+			price:    9997,
 			quantity: 15.5 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0075,
-			quantity: 18.0 * 1E8,
+			price:    9996,
+			quantity: 18 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0074,
+			price:    9995,
 			quantity: 21.25 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0073,
-			quantity: 24.0 * 1E8,
+			price:    9994,
+			quantity: 24 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
+
 		{
-			price:    0.0079,
+			price:    10000,
 			quantity: 2.5 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0080,
+			price:    10001,
 			quantity: 13 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0081,
+			price:    10002,
 			quantity: 15.6 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0082,
+			price:    10003,
 			quantity: 18.1 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0083,
+			price:    10004,
 			quantity: 22.3 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairID:   "LTC/BTC",
+			pairID:   "BTC/DAI",
+		},
+
+		// LTC/DAI orders
+		{
+			price:    98,
+			quantity: 3.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    97,
+			quantity: 15.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    96,
+			quantity: 18 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    95,
+			quantity: 21.25 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    94,
+			quantity: 24 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+
+		{
+			price:    100,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    101,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+
+		{
+			price:    102,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    103,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    104,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+
+		// WETH/BTC orders
+		{
+			price:    0.021,
+			quantity: 3.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.02,
+			quantity: 15.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.019,
+			quantity: 18 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.018,
+			quantity: 21.25 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.017,
+			quantity: 24 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+
+		{
+			price:    0.023,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.024,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.025,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.026,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.027,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
 		},
 	}
 
