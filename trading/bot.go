@@ -138,7 +138,7 @@ func placeOrders() error {
 		// 	side:     xudrpc.OrderSide_SELL,
 		// 	pairID:   "BTC/DAI",
 		// },
-		
+
 		// LTC/BTC orders
 		{
 			price:    0.0077,
@@ -200,7 +200,7 @@ func placeOrders() error {
 			side:     xudrpc.OrderSide_SELL,
 			pairID:   "LTC/BTC",
 		},
-		
+
 		// LTC/DAI orders
 		{
 			price:    98,

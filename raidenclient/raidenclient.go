@@ -200,7 +200,21 @@ func (raiden *Raiden) makeHTTPRequest(method string, endpoint string, requestBod
 
 	defer response.Body.Close()
 
-	return ioutil.ReadAll(response.Body)
+	body, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var errorResponse RaidenError
+
+	err = json.Unmarshal(body, &errorResponse)
+
+	if errorResponse.Errors != "" {
+		return nil, errors.New(errorResponse.Errors)
+	}
+
+	return body, err
 }
 
 func handleResponse(response []byte, err error) error {
