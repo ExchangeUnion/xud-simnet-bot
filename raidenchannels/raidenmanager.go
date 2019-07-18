@@ -173,6 +173,8 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 
 						raidenChannelsMap[token.address][channel.PartnerAddress] = false
 
+						log.Debug("About to close channel"+token.address+"/"+channel.PartnerAddress)
+
 						sendMessage(
 							slack,
 							"Closed "+token.address+" channel to "+channel.PartnerAddress,
@@ -182,6 +184,8 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 					}
 				}
 			} else {
+				log.Debug("Setting channel inactivity time for "+channel.PartnerAddress)
+
 				inactiveTimes[channel.PartnerAddress] = now
 			}
 		}
