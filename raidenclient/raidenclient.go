@@ -55,10 +55,10 @@ func (raiden *Raiden) Init() {
 func (raiden *Raiden) ListChannels(tokenAddress string) ([]Channel, error) {
 	var response []Channel
 
-	endpoint := "channels/"
+	endpoint := "channels"
 
 	if tokenAddress != "" {
-		endpoint += tokenAddress
+		endpoint += "/" + tokenAddress
 	}
 
 	responseBody, err := raiden.makeHTTPRequest(
