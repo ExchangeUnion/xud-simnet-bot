@@ -147,12 +147,12 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slack *slackclient.Slack, dataPath string) {
 	log.Debug("Checking for inactive Raiden channels")
 
+	now := time.Now()
+
 	// Remove peers that are active from the map
 	for _, peer := range peers {
-		delete(inactiveTimes, peer.RaidenAddress)
+		inactiveTimes[peer.RaidenAddress] = now
 	}
-
-	now := time.Now()
 
 	channels, err := raiden.ListChannels("")
 
@@ -183,10 +183,6 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 						)
 					}
 				}
-			} else {
-				log.Debug("Setting channel inactivity time for " + channel.PartnerAddress)
-
-				inactiveTimes[channel.PartnerAddress] = now
 			}
 		}
 	}
