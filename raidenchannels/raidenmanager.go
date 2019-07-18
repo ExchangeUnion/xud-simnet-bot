@@ -32,7 +32,7 @@ var channelTokens = []token{
 	// DAI token
 	{
 		address:       "0x76671A2831Dc0aF53B09537dea57F1E22899655d",
-		channelAmount: 3.25 * 1e23,
+		channelAmount: 1 * 1e23,
 	},
 }
 
