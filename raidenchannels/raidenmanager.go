@@ -176,7 +176,7 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 						sendMessage(
 							slack,
 							"Closed "+token.address+" channel to "+channel.PartnerAddress,
-							"Could not close "+token.address+" channel to "+channel.PartnerAddress,
+							"Could not close "+token.address+" channel to "+channel.PartnerAddress+": "+fmt.Sprint(err),
 							err,
 						)
 					}
