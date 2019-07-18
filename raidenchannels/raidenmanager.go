@@ -27,12 +27,12 @@ var channelTokens = []token{
 	// WETH token
 	{
 		address:       "0x9F50cEA29307d7D91c5176Af42f3aB74f0190dD3",
-		channelAmount: 10e21,
+		channelAmount: 1e21,
 	},
 	// DAI token
 	{
 		address:       "0x76671A2831Dc0aF53B09537dea57F1E22899655d",
-		channelAmount: 3.25 * 10e23,
+		channelAmount: 3.25 * 1e23,
 	},
 }
 
