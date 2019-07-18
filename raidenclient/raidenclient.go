@@ -55,10 +55,10 @@ func (raiden *Raiden) Init() {
 func (raiden *Raiden) ListChannels(tokenAddress string) ([]Channel, error) {
 	var response []Channel
 
-	endpoint := "channels"
+	endpoint := "channels/"
 
 	if tokenAddress != "" {
-		endpoint += "/" + tokenAddress
+		endpoint += tokenAddress
 	}
 
 	responseBody, err := raiden.makeHTTPRequest(
@@ -150,7 +150,7 @@ func (raiden *Raiden) CloseChannel(partnerAddress string, tokenAddress string) (
 
 	responseBody, err := raiden.makeHTTPRequest(
 		http.MethodPatch,
-		"channels/"+tokenAddress+partnerAddress,
+		"channels/"+tokenAddress+"/"+partnerAddress,
 		map[string]interface{}{
 			"state": "closed",
 		},

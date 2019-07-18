@@ -141,7 +141,7 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 		}
 	}
 
-	updateInactiveTimes(peers.Peers, raiden, slack, dataPath)
+	go updateInactiveTimes(peers.Peers, raiden, slack, dataPath)
 }
 
 func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slack *slackclient.Slack, dataPath string) {
@@ -166,22 +166,20 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 		if channel.State == "opened" {
 			if isInMap {
 				if now.Sub(lastSeen) > channelCloseTimeout {
-					go func() {
-						for _, token := range channelTokens {
-							_, err := raiden.CloseChannel(channel.PartnerAddress, token.address)
-
-							raidenChannelsMap[token.address][channel.PartnerAddress] = false
-
-							sendMessage(
-								slack,
-								"Closed "+token.address+" channel to "+channel.PartnerAddress,
-								"Could not close "+token.address+" channel to "+channel.PartnerAddress,
-								err,
-							)
-						}
-					}()
-
 					delete(inactiveTimes, channel.PartnerAddress)
+
+					for _, token := range channelTokens {
+						_, err := raiden.CloseChannel(channel.PartnerAddress, token.address)
+
+						raidenChannelsMap[token.address][channel.PartnerAddress] = false
+
+						sendMessage(
+							slack,
+							"Closed "+token.address+" channel to "+channel.PartnerAddress,
+							"Could not close "+token.address+" channel to "+channel.PartnerAddress,
+							err,
+						)
+					}
 				}
 			} else {
 				inactiveTimes[channel.PartnerAddress] = now
