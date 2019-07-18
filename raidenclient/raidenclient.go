@@ -208,7 +208,7 @@ func (raiden *Raiden) makeHTTPRequest(method string, endpoint string, requestBod
 
 	var errorResponse RaidenError
 
-	err = json.Unmarshal(body, &errorResponse)
+	json.Unmarshal(body, &errorResponse)
 
 	if errorResponse.Errors != "" {
 		return nil, errors.New(errorResponse.Errors)
