@@ -22,7 +22,7 @@ func main() {
 		printErrorAndExit("Could not initialize logger:", err)
 	}
 
-	cfg.Slack.InitSlack()
+	cfg.Discord.Init()
 	err := cfg.Xud.Init()
 
 	if !cfg.DisableTrading {
@@ -61,7 +61,7 @@ func main() {
 				cfg.Xud,
 				xudCfg.Raiden,
 				cfg.Ethereum,
-				cfg.Slack,
+				cfg.Discord,
 				cfg.DataDir,
 				cfg.EnableBalancing,
 			)
@@ -84,7 +84,7 @@ func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
 	err := lnd.Init()
 
 	if err == nil {
-		lndchannels.InitChannelManager(&wg, lnd, cfg.Slack, cfg.DataDir, nodeName)
+		lndchannels.InitChannelManager(&wg, lnd, cfg.Discord, cfg.DataDir, nodeName)
 	} else {
 		printErrorAndExit("Could not read required files for", nodeName, ":", err)
 	}

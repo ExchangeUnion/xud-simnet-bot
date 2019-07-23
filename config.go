@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/ExchangeUnion/xud-tests/discordclient"
 	"github.com/ExchangeUnion/xud-tests/ethclient"
 	"github.com/ExchangeUnion/xud-tests/lndclient"
 	"github.com/ExchangeUnion/xud-tests/raidenclient"
-	"github.com/ExchangeUnion/xud-tests/slackclient"
 	"github.com/ExchangeUnion/xud-tests/xudclient"
 	"github.com/jessevdk/go-flags"
 )
@@ -38,7 +38,7 @@ type config struct {
 
 	Ethereum *ethclient.Ethereum `group:"ETH"`
 
-	Slack *slackclient.Slack `group:"Slack"`
+	Discord *discordclient.Discord `group:"Discord"`
 
 	Help *helpOptions `group:"Help Options"`
 }
