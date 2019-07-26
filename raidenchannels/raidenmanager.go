@@ -14,8 +14,8 @@ import (
 
 	"github.com/ExchangeUnion/xud-tests/xudclient"
 
+	"github.com/ExchangeUnion/xud-tests/discordclient"
 	"github.com/ExchangeUnion/xud-tests/raidenclient"
-	"github.com/ExchangeUnion/xud-tests/slackclient"
 )
 
 type token struct {
@@ -49,7 +49,7 @@ func InitChannelManager(
 	xud *xudclient.Xud,
 	raiden *raidenclient.Raiden,
 	eth *ethclient.Ethereum,
-	slack *slackclient.Slack,
+	discord *discordclient.Discord,
 	dataDir string,
 	enableBalancing bool) {
 
@@ -67,19 +67,19 @@ func InitChannelManager(
 	go func() {
 		defer wg.Done()
 
-		openChannels(xud, raiden, eth, slack, dataPath)
+		openChannels(xud, raiden, eth, discord, dataPath)
 
 		if enableBalancing {
-			balanceChannels(raiden, slack)
+			balanceChannels(raiden, discord)
 		}
 
 		for {
 			select {
 			case <-secondTicker.C:
-				openChannels(xud, raiden, eth, slack, dataPath)
+				openChannels(xud, raiden, eth, discord, dataPath)
 
 				if enableBalancing {
-					balanceChannels(raiden, slack)
+					balanceChannels(raiden, discord)
 				}
 				break
 
@@ -114,7 +114,7 @@ func initRaidenChannelsMap(raiden *raidenclient.Raiden) {
 	}
 }
 
-func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclient.Ethereum, slack *slackclient.Slack, dataPath string) {
+func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *discordclient.Discord, dataPath string) {
 	log.Debug("Checking XUD for new Raiden partner addresses")
 
 	peers, err := xud.ListPeers()
@@ -132,8 +132,8 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 				hasChannel := channelMap[peer.RaidenAddress]
 
 				if !hasChannel {
-					sendEther(eth, slack, peer.RaidenAddress)
-					openChannel(raiden, slack, token, peer.RaidenAddress)
+					sendEther(eth, discord, peer.RaidenAddress)
+					openChannel(raiden, discord, token, peer.RaidenAddress)
 				} else {
 					log.Debug(peer.RaidenAddress + " already has a " + token.address + " channel. Skipping")
 				}
@@ -141,10 +141,10 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 		}
 	}
 
-	go updateInactiveTimes(peers.Peers, raiden, slack, dataPath)
+	go updateInactiveTimes(peers.Peers, raiden, discord, dataPath)
 }
 
-func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slack *slackclient.Slack, dataPath string) {
+func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, discord *discordclient.Discord, dataPath string) {
 	log.Debug("Checking for inactive Raiden channels")
 
 	now := time.Now()
@@ -176,7 +176,7 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 						log.Debug("About to close channel " + token.address + "/" + channel.PartnerAddress)
 
 						sendMessage(
-							slack,
+							discord,
 							"Closed "+token.address+" channel to "+channel.PartnerAddress,
 							"Could not close "+token.address+" channel to "+channel.PartnerAddress+": "+fmt.Sprint(err),
 							err,
@@ -190,14 +190,14 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, slac
 	saveInactiveTimes(dataPath)
 }
 
-func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress string) {
+func sendEther(eth *ethclient.Ethereum, discord *discordclient.Discord, partnerAddress string) {
 	/*balance, err := eth.EthBalance(partnerAddress)
 
 	if err != nil {
 		message := "Could not query Ether balance of " + partnerAddress + " : " + err.Error()
 
 		log.Warning(message)
-		slack.SendMessage(message)
+		discord.SendMessage(message)
 		return
 	}
 
@@ -205,8 +205,8 @@ func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress
 	if balance.Cmp(big.NewInt(0)) == 0 {
 		err := eth.SendEth(partnerAddress, big.NewInt(1000000000000000000))
 
-		sendMessage(
-			slack,
+		sendMesssage(
+			discord,
 			"Sent Ether to "+partnerAddress,
 			"Could not send Ether to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
@@ -221,12 +221,12 @@ func sendEther(eth *ethclient.Ethereum, slack *slackclient.Slack, partnerAddress
 	}*/
 }
 
-func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token token, partnerAddress string) {
+func openChannel(raiden *raidenclient.Raiden, discord *discordclient.Discord, token token, partnerAddress string) {
 	raidenChannelsMap[token.address][partnerAddress] = true
 
 	go func() {
 		sendMessage(
-			slack,
+			discord,
 			"About to open "+token.address+" channel to "+partnerAddress,
 			"",
 			nil,
@@ -235,7 +235,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 		_, err := raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, 500)
 
 		sendMessage(
-			slack,
+			discord,
 			"Opened "+token.address+" channel to "+partnerAddress,
 			"Could not open "+token.address+" channel to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
@@ -252,7 +252,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 		_, err = raiden.SendPayment(partnerAddress, token.address, paymentAmount)
 
 		sendMessage(
-			slack,
+			discord,
 			"Sent half of "+token.address+"channel capacity to "+partnerAddress,
 			"Could send half of "+token.address+" to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
@@ -260,7 +260,7 @@ func openChannel(raiden *raidenclient.Raiden, slack *slackclient.Slack, token to
 	}()
 }
 
-func balanceChannels(raiden *raidenclient.Raiden, slack *slackclient.Slack) {
+func balanceChannels(raiden *raidenclient.Raiden, discord *discordclient.Discord) {
 	log.Debug("Checking Raiden for channels that need to be rebalanced")
 
 	for _, token := range channelTokens {
@@ -283,18 +283,18 @@ func balanceChannels(raiden *raidenclient.Raiden, slack *slackclient.Slack) {
 				}
 
 				log.Info(message)
-				slack.SendMessage(message)
+				discord.SendMessage(message)
 			}
 		}
 	}
 }
 
-func sendMessage(slack *slackclient.Slack, message string, errorMessage string, err error) {
+func sendMessage(discord *discordclient.Discord, message string, errorMessage string, err error) {
 	if err == nil {
 		log.Info(message)
-		slack.SendMessage(message)
+		discord.SendMessage(message)
 	} else {
 		log.Warning(errorMessage)
-		slack.SendMessage(errorMessage)
+		discord.SendMessage(errorMessage)
 	}
 }
