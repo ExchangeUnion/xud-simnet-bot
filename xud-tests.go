@@ -70,6 +70,8 @@ func main() {
 		}
 	}
 
+	cfg.Discord.SendMessage("Started bot")
+
 	wg.Wait()
 	log.Warning("All services died")
 }
