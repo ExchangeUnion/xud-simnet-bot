@@ -10,8 +10,7 @@ type Discord struct {
 	ChannelID string `long:"discord.channelid" description:"ID of the channel to which messages should be sent"`
 	Prefix    string `long:"discord.prefix" description:"Prefix for every message"`
 
-	api       *discordgo.Session
-	channelID string
+	api *discordgo.Session
 }
 
 // Init initializes a new Discord client
@@ -33,7 +32,7 @@ func (discord *Discord) SendMessage(message string) {
 		message = discord.Prefix + ": " + message
 	}
 
-	_, err := discord.api.ChannelMessageSend("598158817418805279", message)
+	_, err := discord.api.ChannelMessageSend(discord.ChannelID, message)
 
 	if err != nil {
 		log.Warning("Could not send (%v) to Discord: %v", message, err.Error())
