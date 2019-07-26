@@ -44,27 +44,29 @@ func main() {
 			initChannelManager(xudCfg.LndConfigs.Ltc, false)
 		}
 
-		if !xudCfg.Raiden.Disable {
-			log.Info("Starting Raiden channel manager")
+		if !cfg.Ethereum.Disable {
+			if !xudCfg.Raiden.Disable {
+				log.Info("Starting Raiden channel manager")
 
-			err := cfg.Ethereum.Init()
+				err := cfg.Ethereum.Init()
 
-			if err != nil {
-				log.Error("Could not start Ethereum client: %v", err)
-				return
+				if err != nil {
+					log.Error("Could not start Ethereum client: %v", err)
+					return
+				}
+
+				xudCfg.Raiden.Init()
+
+				raidenchannels.InitChannelManager(
+					&wg,
+					cfg.Xud,
+					xudCfg.Raiden,
+					cfg.Ethereum,
+					cfg.Discord,
+					cfg.DataDir,
+					cfg.EnableBalancing,
+				)
 			}
-
-			xudCfg.Raiden.Init()
-
-			raidenchannels.InitChannelManager(
-				&wg,
-				cfg.Xud,
-				xudCfg.Raiden,
-				cfg.Ethereum,
-				cfg.Discord,
-				cfg.DataDir,
-				cfg.EnableBalancing,
-			)
 		}
 	}
 
