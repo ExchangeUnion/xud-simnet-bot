@@ -25,7 +25,8 @@ var erc20TransferGasLimit = uint64(50000)
 
 // Ethereum represents an Ethereum client
 type Ethereum struct {
-	Disable bool `long:"eth.disable" description:"Whether the Ethereum and Raiden manager should be enabled"`
+	Disable       bool   `long:"eth.disable" description:"Whether the Ethereum and Raiden manager should be enabled"`
+	SettleTimeout uint64 `long:"eth.settletimeout" default:"20660" description:"Settle timeout of the Raiden channels the bot will open"`
 
 	RPCHost      string `long:"eth.rpchost" description:"Host of the RPC interface of an Ethereum client"`
 	KeystorePath string `long:"eth.keystore" description:"Path to the keystore of the Ethereum address"`

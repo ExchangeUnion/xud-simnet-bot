@@ -133,7 +133,7 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 
 				if !hasChannel {
 					sendEther(eth, discord, peer.RaidenAddress)
-					openChannel(raiden, discord, token, peer.RaidenAddress)
+					openChannel(raiden, eth, discord, token, peer.RaidenAddress)
 				} else {
 					log.Debug(peer.RaidenAddress + " already has a " + token.address + " channel. Skipping")
 				}
@@ -221,7 +221,7 @@ func sendEther(eth *ethclient.Ethereum, discord *discordclient.Discord, partnerA
 	}*/
 }
 
-func openChannel(raiden *raidenclient.Raiden, discord *discordclient.Discord, token token, partnerAddress string) {
+func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *discordclient.Discord, token token, partnerAddress string) {
 	raidenChannelsMap[token.address][partnerAddress] = true
 
 	go func() {
@@ -232,7 +232,7 @@ func openChannel(raiden *raidenclient.Raiden, discord *discordclient.Discord, to
 			nil,
 		)
 
-		_, err := raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, 500)
+		_, err := raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, eth.SettleTimeout)
 
 		sendMessage(
 			discord,
