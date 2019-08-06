@@ -108,36 +108,36 @@ func placeOrders() error {
 			pairID:   "BTC/DAI",
 		},
 
-		// {
-		// 	price:    10000,
-		// 	quantity: 2.5 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "BTC/DAI",
-		// },
-		// {
-		// 	price:    10001,
-		// 	quantity: 13 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "BTC/DAI",
-		// },
-		// {
-		// 	price:    10002,
-		// 	quantity: 15.6 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "BTC/DAI",
-		// },
-		// {
-		// 	price:    10003,
-		// 	quantity: 18.1 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "BTC/DAI",
-		// },
-		// {
-		// 	price:    10004,
-		// 	quantity: 22.3 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "BTC/DAI",
-		// },
+		{
+			price:    10000,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10001,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10002,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10003,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10004,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
 
 		// LTC/BTC orders
 		{
@@ -233,69 +233,69 @@ func placeOrders() error {
 			pairID:   "LTC/DAI",
 		},
 
-		// {
-		// 	price:    100,
-		// 	quantity: 2.5 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "LTC/DAI",
-		// },
-		// {
-		// 	price:    101,
-		// 	quantity: 13 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "LTC/DAI",
-		// },
+		{
+			price:    100,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    101,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
 
-		// {
-		// 	price:    102,
-		// 	quantity: 15.6 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "LTC/DAI",
-		// },
-		// {
-		// 	price:    103,
-		// 	quantity: 18.1 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "LTC/DAI",
-		// },
-		// {
-		// 	price:    104,
-		// 	quantity: 22.3 * 1E8,
-		// 	side:     xudrpc.OrderSide_SELL,
-		// 	pairID:   "LTC/DAI",
-		// },
+		{
+			price:    102,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    103,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    104,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
 
 		// WETH/BTC orders
-		// {
-		// 	price:    0.021,
-		// 	quantity: 3.5 * 1E8,
-		// 	side:     xudrpc.OrderSide_BUY,
-		// 	pairID:   "WETH/BTC",
-		// },
-		// {
-		// 	price:    0.02,
-		// 	quantity: 15.5 * 1E8,
-		// 	side:     xudrpc.OrderSide_BUY,
-		// 	pairID:   "WETH/BTC",
-		// },
-		// {
-		// 	price:    0.019,
-		// 	quantity: 18 * 1E8,
-		// 	side:     xudrpc.OrderSide_BUY,
-		// 	pairID:   "WETH/BTC",
-		// },
-		// {
-		// 	price:    0.018,
-		// 	quantity: 21.25 * 1E8,
-		// 	side:     xudrpc.OrderSide_BUY,
-		// 	pairID:   "WETH/BTC",
-		// },
-		// {
-		// 	price:    0.017,
-		// 	quantity: 24 * 1E8,
-		// 	side:     xudrpc.OrderSide_BUY,
-		// 	pairID:   "WETH/BTC",
-		// },
+		{
+			price:    0.021,
+			quantity: 3.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.02,
+			quantity: 15.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.019,
+			quantity: 18 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.018,
+			quantity: 21.25 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.017,
+			quantity: 24 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
 
 		{
 			price:    0.023,
