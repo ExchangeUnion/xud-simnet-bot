@@ -97,14 +97,14 @@ func initRaidenChannelsMap(raiden *raidenclient.Raiden) {
 	log.Debug("Querying and indexing existing Raiden channels")
 
 	for _, token := range channelTokens {
-		raidenChannelsMap[token.address] = make(map[string]bool)
-
 		channels, err := raiden.ListChannels(token.address)
 
 		if err != nil {
 			log.Error("Could not query channels of Raiden: %v", err.Error())
 			return
 		}
+
+		raidenChannelsMap[token.address] = make(map[string]bool)
 
 		for _, channel := range channels {
 			raidenChannelsMap[token.address][channel.PartnerAddress] = true
@@ -115,6 +115,11 @@ func initRaidenChannelsMap(raiden *raidenclient.Raiden) {
 }
 
 func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *discordclient.Discord, dataPath string) {
+	if len(raidenChannelsMap) == 0 {
+		log.Debug("Could not open Raiden channels: channels map was not initialized")
+		return
+	}
+
 	log.Debug("Checking XUD for new Raiden partner addresses")
 
 	peers, err := xud.ListPeers()
