@@ -145,7 +145,7 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 }
 
 func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, discord *discordclient.Discord, dataPath string) {
-	log.Debug("Checking for inactive Raiden channels")
+	/*log.Debug("Checking for inactive Raiden channels")
 
 	now := time.Now()
 
@@ -187,7 +187,7 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, disc
 		}
 	}
 
-	saveInactiveTimes(dataPath)
+	saveInactiveTimes(dataPath)*/
 }
 
 func sendEther(eth *ethclient.Ethereum, discord *discordclient.Discord, partnerAddress string) {
