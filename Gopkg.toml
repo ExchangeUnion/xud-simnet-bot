@@ -36,19 +36,7 @@
 
 [[constraint]]
   name = "github.com/lightningnetwork/lnd"
-  version = "v0.5-beta"
-
-[[constraint]]
-  name = "github.com/golang/protobuf"
-  revision = "bbd03ef6da3a115852eaf24c8a1c46aeb39aa175"
-
-[[constraint]]
-  name = "golang.org/x/net"
-  revision = "ae89d30ce0c63142b652837da33d782e2b0a9b25"
-
-[[constraint]]
-  name = "google.golang.org/genproto"
-  revision = "df60624c1e9b9d2973e889c7a1cff73155da81c4"
+  version = "v0.7.1-beta"
 
 [[constraint]]
   name = "github.com/jessevdk/go-flags"
@@ -64,7 +52,7 @@
 
 [[constraint]]
   name = "github.com/ethereum/go-ethereum"
-  version = "1.8.27"
+  version = "1.9.1"
 
 [[constraint]]
   name = "github.com/bwmarrin/discordgo"
