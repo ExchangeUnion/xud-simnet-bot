@@ -23,25 +23,14 @@ type token struct {
 	channelAmount float64
 }
 
-var channelTokens = []token{
-	// WETH token
-	{
-		address:       "0x46AF55C4320D37bCeA9a3cF6f0Fe18FFf7D9685b",
-		channelAmount: 1e21,
-	},
-	// DAI token
-	{
-		address:       "0x7CB0a7b39358CFac898CD26A6934c2f74d9aAD20",
-		channelAmount: 1 * 1e23,
-	},
-}
-
 // channelCloseTimeout defines after how many seconds a channel times out and should be closed
 const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
 
 var inactiveTimes = make(map[string]time.Time)
 
 var raidenChannelsMap = make(map[string]map[string]bool)
+
+var channelTokens []ethclient.Token
 
 // InitChannelManager initializes a new Raiden channel manager
 func InitChannelManager(
@@ -50,8 +39,11 @@ func InitChannelManager(
 	raiden *raidenclient.Raiden,
 	eth *ethclient.Ethereum,
 	discord *discordclient.Discord,
+	tokens []ethclient.Token,
 	dataDir string,
 	enableBalancing bool) {
+
+	channelTokens = tokens
 
 	wg.Add(1)
 
@@ -97,20 +89,20 @@ func initRaidenChannelsMap(raiden *raidenclient.Raiden) {
 	log.Debug("Querying and indexing existing Raiden channels")
 
 	for _, token := range channelTokens {
-		channels, err := raiden.ListChannels(token.address)
+		channels, err := raiden.ListChannels(token.Address)
 
 		if err != nil {
 			log.Error("Could not query channels of Raiden: %v", err.Error())
 			return
 		}
 
-		raidenChannelsMap[token.address] = make(map[string]bool)
+		raidenChannelsMap[token.Address] = make(map[string]bool)
 
 		for _, channel := range channels {
-			raidenChannelsMap[token.address][channel.PartnerAddress] = true
+			raidenChannelsMap[token.Address][channel.PartnerAddress] = true
 		}
 
-		log.Debug("Initialized token: " + token.address)
+		log.Debug("Initialized token: " + token.Address)
 	}
 }
 
@@ -130,7 +122,7 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 	}
 
 	for _, token := range channelTokens {
-		channelMap := raidenChannelsMap[token.address]
+		channelMap := raidenChannelsMap[token.Address]
 
 		for _, peer := range peers.Peers {
 			if peer.RaidenAddress != "" {
@@ -140,7 +132,7 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 					sendEther(eth, discord, peer.RaidenAddress)
 					openChannel(raiden, eth, discord, token, peer.RaidenAddress)
 				} else {
-					log.Debug(peer.RaidenAddress + " already has a " + token.address + " channel. Skipping")
+					log.Debug(peer.RaidenAddress + " already has a " + token.Address + " channel. Skipping")
 				}
 			}
 		}
@@ -174,16 +166,16 @@ func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, disc
 					delete(inactiveTimes, channel.PartnerAddress)
 
 					for _, token := range channelTokens {
-						_, err := raiden.CloseChannel(channel.PartnerAddress, token.address)
+						_, err := raiden.CloseChannel(channel.PartnerAddress, token.Address)
 
-						raidenChannelsMap[token.address][channel.PartnerAddress] = false
+						raidenChannelsMap[token.Address][channel.PartnerAddress] = false
 
-						log.Debug("About to close channel " + token.address + "/" + channel.PartnerAddress)
+						log.Debug("About to close channel " + token.Address + "/" + channel.PartnerAddress)
 
 						sendMessage(
 							discord,
-							"Closed "+token.address+" channel to "+channel.PartnerAddress,
-							"Could not close "+token.address+" channel to "+channel.PartnerAddress+": "+fmt.Sprint(err),
+							"Closed "+token.Address+" channel to "+channel.PartnerAddress,
+							"Could not close "+token.Address+" channel to "+channel.PartnerAddress+": "+fmt.Sprint(err),
 							err,
 						)
 					}
@@ -226,23 +218,23 @@ func sendEther(eth *ethclient.Ethereum, discord *discordclient.Discord, partnerA
 	}*/
 }
 
-func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *discordclient.Discord, token token, partnerAddress string) {
-	raidenChannelsMap[token.address][partnerAddress] = true
+func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *discordclient.Discord, token ethclient.Token, partnerAddress string) {
+	raidenChannelsMap[token.Address][partnerAddress] = true
 
 	go func() {
 		sendMessage(
 			discord,
-			"About to open "+token.address+" channel to "+partnerAddress,
+			"About to open "+token.Address+" channel to "+partnerAddress,
 			"",
 			nil,
 		)
 
-		_, err := raiden.OpenChannel(partnerAddress, token.address, token.channelAmount, eth.SettleTimeout)
+		_, err := raiden.OpenChannel(partnerAddress, token.Address, token.ChannelAmount, eth.SettleTimeout)
 
 		sendMessage(
 			discord,
-			"Opened "+token.address+" channel to "+partnerAddress,
-			"Could not open "+token.address+" channel to "+partnerAddress+": "+fmt.Sprint(err),
+			"Opened "+token.Address+" channel to "+partnerAddress,
+			"Could not open "+token.Address+" channel to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
 		)
 
@@ -250,16 +242,16 @@ func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *
 			return
 		}
 
-		paymentAmount := math.Round(token.channelAmount / 2)
+		paymentAmount := math.Round(token.ChannelAmount / 2)
 
-		log.Info("Sending " + strconv.FormatFloat(paymentAmount, 'f', -1, 64) + " " + token.address + " to " + partnerAddress)
+		log.Info("Sending " + strconv.FormatFloat(paymentAmount, 'f', -1, 64) + " " + token.Address + " to " + partnerAddress)
 
-		_, err = raiden.SendPayment(partnerAddress, token.address, paymentAmount)
+		_, err = raiden.SendPayment(partnerAddress, token.Address, paymentAmount)
 
 		sendMessage(
 			discord,
-			"Sent half of "+token.address+" channel capacity to "+partnerAddress,
-			"Could send half of "+token.address+" to "+partnerAddress+": "+fmt.Sprint(err),
+			"Sent half of "+token.Address+" channel capacity to "+partnerAddress,
+			"Could send half of "+token.Address+" to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
 		)
 	}()
@@ -269,7 +261,7 @@ func balanceChannels(raiden *raidenclient.Raiden, discord *discordclient.Discord
 	log.Debug("Checking Raiden for channels that need to be rebalanced")
 
 	for _, token := range channelTokens {
-		channels, err := raiden.ListChannels(token.address)
+		channels, err := raiden.ListChannels(token.Address)
 
 		if err != nil {
 			log.Warning("Could not query Raiden channels: %v", err.Error())
@@ -278,10 +270,10 @@ func balanceChannels(raiden *raidenclient.Raiden, discord *discordclient.Discord
 
 		for _, channel := range channels {
 			// If more than 80% of the balance is on our side it is time to rebalance the channel
-			if channel.Balance/token.channelAmount > float64(0.8) {
-				_, err := raiden.SendPayment(channel.PartnerAddress, channel.TokenAddress, channel.Balance-(token.channelAmount/float64(2)))
+			if channel.Balance/token.ChannelAmount > float64(0.8) {
+				_, err := raiden.SendPayment(channel.PartnerAddress, channel.TokenAddress, channel.Balance-(token.ChannelAmount/float64(2)))
 
-				message := "Rebalanced " + token.address + " channel with " + channel.PartnerAddress
+				message := "Rebalanced " + token.Address + " channel with " + channel.PartnerAddress
 
 				if err != nil {
 					message = "Could not rebalance channel: " + err.Error()

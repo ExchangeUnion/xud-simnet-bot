@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/user"
@@ -57,6 +58,8 @@ type xudConfig struct {
 var cfg = config{}
 var xudCfg = xudConfig{}
 
+var parsedTokens = []ethclient.Token{}
+
 func initConfig() error {
 	// Ignore unknown flags when parsing command line arguments the first time
 	// so that the "unknown flag" error doesn't show up twice
@@ -89,6 +92,15 @@ func initConfig() error {
 	// Parse flags again to override config
 	flags.Parse(&cfg)
 
+	// Parse the JSON encoded array of tokens
+	err := json.Unmarshal([]byte(cfg.Ethereum.Tokens), &parsedTokens)
+
+	fmt.Println(parsedTokens[0].ChannelAmount)
+
+	if err != nil {
+		return err
+	}
+
 	getXudTestsDataDir()
 	updateDefaultPaths()
 
@@ -101,7 +113,7 @@ func initConfig() error {
 	}
 
 	// Parse XUD config for information about how to connect to the LNDs
-	_, err := toml.DecodeFile(cfg.Xud.Config, &xudCfg)
+	_, err = toml.DecodeFile(cfg.Xud.Config, &xudCfg)
 
 	if err != nil {
 		return err

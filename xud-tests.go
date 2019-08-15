@@ -63,6 +63,7 @@ func main() {
 					xudCfg.Raiden,
 					cfg.Ethereum,
 					cfg.Discord,
+					parsedTokens,
 					cfg.DataDir,
 					cfg.EnableBalancing,
 				)
