@@ -387,9 +387,9 @@ func placeOrder(params placeOrderParameters) error {
 		return err
 	}
 
-	//if response.SwapResults != nil {
-	//	log.Debugf("Swapped: %v ", response.SwapResults)
-	//}
+	// if response.SwapResults != nil {
+	// 	log.Debugf("Swapped: %v ", response.SwapResults)
+	// }
 
 	var remainingOrder = response.RemainingOrder
 

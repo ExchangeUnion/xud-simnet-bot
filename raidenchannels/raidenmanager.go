@@ -251,7 +251,7 @@ func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *
 		sendMessage(
 			discord,
 			"Sent half of "+token.Address+" channel capacity to "+partnerAddress,
-			"Could send half of "+token.Address+" to "+partnerAddress+": "+fmt.Sprint(err),
+			"Could not send half of "+token.Address+" to "+partnerAddress+": "+fmt.Sprint(err),
 			err,
 		)
 	}()
