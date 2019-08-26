@@ -299,12 +299,15 @@ func sendTokens(raiden *raidenclient.Raiden, discord *discordclient.Discord, tok
 
 	_, err := raiden.SendPayment(partnerAddress, token.Address, paymentAmount)
 
-	sendMessage(
-		discord,
-		"Sent half of "+token.Address+" channel capacity to "+partnerAddress,
-		"Could not balance "+token.Address+" channel of "+partnerAddress+": "+fmt.Sprint(err),
-		err,
-	)
+	if err != nil {
+		log.Debug("Could not balance " + token.Address + " channel of " + partnerAddress + ": " + fmt.Sprint(err))
+		return
+	}
+
+	message := "Sent half of " + token.Address + " channel capacity to " + partnerAddress
+
+	log.Info(message)
+	discord.SendMessage(message)
 
 	delete(pendingTransfers[token.Address], partnerAddress)
 }
