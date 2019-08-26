@@ -34,6 +34,8 @@ var channelTokens []ethclient.Token
 
 var xudPeers = make([]*xudrpc.Peer, 0)
 
+var pendingTransfers = make(map[string]map[string]bool)
+
 // InitChannelManager initializes a new Raiden channel manager
 func InitChannelManager(
 	wg *sync.WaitGroup,
@@ -45,6 +47,10 @@ func InitChannelManager(
 	dataDir string) {
 
 	channelTokens = tokens
+
+	for _, token := range channelTokens {
+		pendingTransfers[token.Address] = make(map[string]bool)
+	}
 
 	wg.Add(1)
 
@@ -62,7 +68,8 @@ func InitChannelManager(
 
 		queryXudPeers(xud)
 
-		openChannels(raiden, eth, discord, dataPath)
+		go openChannels(raiden, eth, discord, dataPath)
+		go balanceChannels(raiden, discord)
 
 		for {
 			select {
@@ -263,30 +270,43 @@ func balanceChannels(raiden *raidenclient.Raiden, discord *discordclient.Discord
 			return
 		}
 
+		pendingTransfersToken := pendingTransfers[token.Address]
+
 		for _, channel := range channels {
-			if channel.State == "opened" && channel.Balance == channel.TotalDeposit {
+			if channel.State == "opened" && channel.Balance == token.ChannelAmount {
 				if _, hasXudPeer := xudPeerMap[channel.PartnerAddress]; !hasXudPeer {
 					log.Debug("Could not balance " + token.Address + " channel of " + channel.PartnerAddress + ": XUD peer not online")
 					continue
 				}
 
-				go func() {
-					paymentAmount := math.Round(token.ChannelAmount / 2)
+				if _, hasPendingTransfer := pendingTransfersToken[channel.PartnerAddress]; hasPendingTransfer {
+					log.Debug("Could not balance " + token.Address + " channel of " + channel.PartnerAddress + ": transfer already pending")
+					continue
+				}
 
-					log.Info("Sending " + strconv.FormatFloat(paymentAmount, 'f', -1, 64) + " " + token.Address + " to " + channel.PartnerAddress)
-
-					_, err = raiden.SendPayment(channel.PartnerAddress, token.Address, paymentAmount)
-
-					sendMessage(
-						discord,
-						"Sent half of "+token.Address+" channel capacity to "+channel.PartnerAddress,
-						"Could not balance "+token.Address+" channel of "+channel.PartnerAddress+": "+fmt.Sprint(err),
-						err,
-					)
-				}()
+				go sendTokens(raiden, discord, token, channel.PartnerAddress)
 			}
 		}
 	}
+}
+
+func sendTokens(raiden *raidenclient.Raiden, discord *discordclient.Discord, token ethclient.Token, partnerAddress string) {
+	pendingTransfers[token.Address][partnerAddress] = true
+
+	paymentAmount := math.Round(token.ChannelAmount / 2)
+
+	log.Info("Sending " + strconv.FormatFloat(paymentAmount, 'f', -1, 64) + " " + token.Address + " to " + partnerAddress)
+
+	_, err := raiden.SendPayment(partnerAddress, token.Address, paymentAmount)
+
+	sendMessage(
+		discord,
+		"Sent half of "+token.Address+" channel capacity to "+partnerAddress,
+		"Could not balance "+token.Address+" channel of "+partnerAddress+": "+fmt.Sprint(err),
+		err,
+	)
+
+	delete(pendingTransfers[token.Address], partnerAddress)
 }
 
 func sendMessage(discord *discordclient.Discord, message string, errorMessage string, err error) {
