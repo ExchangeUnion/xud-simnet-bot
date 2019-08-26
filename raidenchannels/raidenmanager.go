@@ -32,6 +32,8 @@ var raidenChannelsMap = make(map[string]map[string]bool)
 
 var channelTokens []ethclient.Token
 
+var xudPeers = make([]*xudrpc.Peer, 0)
+
 // InitChannelManager initializes a new Raiden channel manager
 func InitChannelManager(
 	wg *sync.WaitGroup,
@@ -40,8 +42,7 @@ func InitChannelManager(
 	eth *ethclient.Ethereum,
 	discord *discordclient.Discord,
 	tokens []ethclient.Token,
-	dataDir string,
-	enableBalancing bool) {
+	dataDir string) {
 
 	channelTokens = tokens
 
@@ -59,20 +60,17 @@ func InitChannelManager(
 	go func() {
 		defer wg.Done()
 
-		openChannels(xud, raiden, eth, discord, dataPath)
+		queryXudPeers(xud)
 
-		if enableBalancing {
-			balanceChannels(raiden, discord)
-		}
+		openChannels(raiden, eth, discord, dataPath)
 
 		for {
 			select {
 			case <-secondTicker.C:
-				openChannels(xud, raiden, eth, discord, dataPath)
+				queryXudPeers(xud)
 
-				if enableBalancing {
-					balanceChannels(raiden, discord)
-				}
+				go openChannels(raiden, eth, discord, dataPath)
+				go balanceChannels(raiden, discord)
 				break
 
 			case <-dailyTicker.C:
@@ -106,14 +104,7 @@ func initRaidenChannelsMap(raiden *raidenclient.Raiden) {
 	}
 }
 
-func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *discordclient.Discord, dataPath string) {
-	if len(raidenChannelsMap) == 0 {
-		log.Debug("Could not open Raiden channels: channels map was not initialized")
-		return
-	}
-
-	log.Debug("Checking XUD for new Raiden partner addresses")
-
+func queryXudPeers(xud *xudclient.Xud) {
 	peers, err := xud.ListPeers()
 
 	if err != nil {
@@ -121,10 +112,21 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 		return
 	}
 
+	xudPeers = peers.Peers
+}
+
+func openChannels(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *discordclient.Discord, dataPath string) {
+	if len(raidenChannelsMap) == 0 {
+		log.Debug("Could not open Raiden channels: channels map was not initialized")
+		return
+	}
+
+	log.Debug("Checking XUD peers for new Raiden partner addresses")
+
 	for _, token := range channelTokens {
 		channelMap := raidenChannelsMap[token.Address]
 
-		for _, peer := range peers.Peers {
+		for _, peer := range xudPeers {
 			if peer.RaidenAddress != "" {
 				hasChannel := channelMap[peer.RaidenAddress]
 
@@ -138,16 +140,16 @@ func openChannels(xud *xudclient.Xud, raiden *raidenclient.Raiden, eth *ethclien
 		}
 	}
 
-	go updateInactiveTimes(peers.Peers, raiden, discord, dataPath)
-}
+	go updateInactiveTimes(raiden, discord, dataPath)
 
-func updateInactiveTimes(peers []*xudrpc.Peer, raiden *raidenclient.Raiden, discord *discordclient.Discord, dataPath string) {
+}
+func updateInactiveTimes(raiden *raidenclient.Raiden, discord *discordclient.Discord, dataPath string) {
 	log.Debug("Checking for inactive Raiden channels")
 
 	now := time.Now()
 
 	// Remove peers that are active from the map
-	for _, peer := range peers {
+	for _, peer := range xudPeers {
 		inactiveTimes[peer.RaidenAddress] = now
 	}
 
@@ -241,24 +243,17 @@ func openChannel(raiden *raidenclient.Raiden, eth *ethclient.Ethereum, discord *
 		if err != nil {
 			return
 		}
-
-		paymentAmount := math.Round(token.ChannelAmount / 2)
-
-		log.Info("Sending " + strconv.FormatFloat(paymentAmount, 'f', -1, 64) + " " + token.Address + " to " + partnerAddress)
-
-		_, err = raiden.SendPayment(partnerAddress, token.Address, paymentAmount)
-
-		sendMessage(
-			discord,
-			"Sent half of "+token.Address+" channel capacity to "+partnerAddress,
-			"Could not send half of "+token.Address+" to "+partnerAddress+": "+fmt.Sprint(err),
-			err,
-		)
 	}()
 }
 
 func balanceChannels(raiden *raidenclient.Raiden, discord *discordclient.Discord) {
 	log.Debug("Checking Raiden for channels that need to be rebalanced")
+
+	xudPeerMap := map[string]bool{}
+
+	for _, peer := range xudPeers {
+		xudPeerMap[peer.RaidenAddress] = true
+	}
 
 	for _, token := range channelTokens {
 		channels, err := raiden.ListChannels(token.Address)
@@ -269,18 +264,26 @@ func balanceChannels(raiden *raidenclient.Raiden, discord *discordclient.Discord
 		}
 
 		for _, channel := range channels {
-			// If more than 80% of the balance is on our side it is time to rebalance the channel
-			if channel.Balance/token.ChannelAmount > float64(0.8) {
-				_, err := raiden.SendPayment(channel.PartnerAddress, channel.TokenAddress, channel.Balance-(token.ChannelAmount/float64(2)))
-
-				message := "Rebalanced " + token.Address + " channel with " + channel.PartnerAddress
-
-				if err != nil {
-					message = "Could not rebalance channel: " + err.Error()
+			if channel.State == "opened" && channel.Balance == channel.TotalDeposit {
+				if _, hasXudPeer := xudPeerMap[channel.PartnerAddress]; !hasXudPeer {
+					log.Debug("Could not balance " + token.Address + " channel of " + channel.PartnerAddress + ": XUD peer not online")
+					continue
 				}
 
-				log.Info(message)
-				discord.SendMessage(message)
+				go func() {
+					paymentAmount := math.Round(token.ChannelAmount / 2)
+
+					log.Info("Sending " + strconv.FormatFloat(paymentAmount, 'f', -1, 64) + " " + token.Address + " to " + channel.PartnerAddress)
+
+					_, err = raiden.SendPayment(channel.PartnerAddress, token.Address, paymentAmount)
+
+					sendMessage(
+						discord,
+						"Sent half of "+token.Address+" channel capacity to "+channel.PartnerAddress,
+						"Could not balance "+token.Address+" channel of "+channel.PartnerAddress+": "+fmt.Sprint(err),
+						err,
+					)
+				}()
 			}
 		}
 	}

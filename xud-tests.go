@@ -65,7 +65,6 @@ func main() {
 					cfg.Discord,
 					parsedTokens,
 					cfg.DataDir,
-					cfg.EnableBalancing,
 				)
 			}
 		}

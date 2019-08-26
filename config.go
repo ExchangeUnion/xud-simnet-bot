@@ -32,7 +32,6 @@ type config struct {
 
 	DisableTrading        bool   `long:"disabletrading" description:"Whether to disable the trading bot"`
 	DisableChannelManager bool   `long:"disablechannelmanager" description:"Whether to disable the channel manager"`
-	EnableBalancing       bool   `long:"enablebalancing" description:"Whether the Raiden channel balancing should be enabled"`
 	TradingMode           string `long:"tradingmode" description:"Which trading mode should be used by the bot"`
 
 	Xud *xudclient.Xud `group:"XUD"`
