@@ -105,8 +105,11 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, discord *discordclient
 			})
 
 			if err != nil {
-				logCouldNotConnect(nodeName, err)
-				discord.SendMessage("Failed to open new " + nodeName + " channel with " + peer.PubKey + ": " + err.Error())
+				// Ignore common LND error and retry opening the channel next iteration
+				if err.Error() != "rpc error: code = Code(102) desc = Synchronizing blockchain" {
+					logCouldNotConnect(nodeName, err)
+					discord.SendMessage("Failed to open new " + nodeName + " channel with " + peer.PubKey + ": " + err.Error())
+				}
 
 				return
 			}
