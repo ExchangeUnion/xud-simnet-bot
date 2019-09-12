@@ -94,8 +94,6 @@ func initConfig() error {
 	// Parse the JSON encoded array of tokens
 	err := json.Unmarshal([]byte(cfg.Ethereum.Tokens), &parsedTokens)
 
-	fmt.Println(parsedTokens[0].ChannelAmount)
-
 	if err != nil {
 		return err
 	}
