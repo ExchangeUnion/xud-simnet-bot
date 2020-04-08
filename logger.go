@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/ExchangeUnion/xud-tests/channels"
-	"github.com/ExchangeUnion/xud-tests/slackclient"
+	"github.com/ExchangeUnion/xud-tests/discordclient"
+	"github.com/ExchangeUnion/xud-tests/lndchannels"
 	"github.com/ExchangeUnion/xud-tests/trading"
 	"github.com/op/go-logging"
 )
@@ -28,8 +28,8 @@ func initLogger(logFile string) error {
 	)
 
 	trading.UseLogger(*log)
-	channels.UseLogger(*log)
-	slackclient.UseLogger(*log)
+	lndchannels.UseLogger(*log)
+	discordclient.UseLogger(*log)
 
 	return nil
 }

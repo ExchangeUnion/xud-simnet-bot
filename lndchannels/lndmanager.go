@@ -1,4 +1,4 @@
-package channels
+package lndchannels
 
 import (
 	"encoding/gob"
@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ExchangeUnion/xud-tests/slackclient"
+	"github.com/ExchangeUnion/xud-tests/discordclient"
 
 	"github.com/ExchangeUnion/xud-tests/lndclient"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -23,13 +23,13 @@ type channelType struct {
 	channelPoint string
 }
 
-const newChannelAmt = 25*100000000
+const newChannelAmt = 25 * 100000000
 
 // channelCloseTimeout defines after how many seconds a channel times out and should be closed
 const channelCloseTimeout = time.Duration(2 * 24 * time.Hour)
 
 // InitChannelManager initializes a new channel manager
-func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, slack *slackclient.Slack, dataDir string, nodeName string) {
+func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, discord *discordclient.Discord, dataDir string, nodeName string) {
 	// inactiveTimes is a map between the public key of a node and the last time it was seen
 	inactiveTimes := make(map[string]time.Time)
 
@@ -45,19 +45,19 @@ func InitChannelManager(wg *sync.WaitGroup, lnd *lndclient.Lnd, slack *slackclie
 	go func() {
 		defer wg.Done()
 
-		handleChannels(lnd, nodeName, slack, inactiveTimes, dataPath)
+		handleChannels(lnd, nodeName, discord, inactiveTimes, dataPath)
 
 		for {
 			select {
 			case <-ticker.C:
-				handleChannels(lnd, nodeName, slack, inactiveTimes, dataPath)
+				handleChannels(lnd, nodeName, discord, inactiveTimes, dataPath)
 				break
 			}
 		}
 	}()
 }
 
-func handleChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, dataPath string) {
+func handleChannels(lnd *lndclient.Lnd, nodeName string, discord *discordclient.Discord, inactiveTimes map[string]time.Time, dataPath string) {
 	log.Debug("Checking " + nodeName + " channels")
 
 	channelsMap, err := getChannelsMap(lnd)
@@ -69,13 +69,13 @@ func handleChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slac
 
 	log.Debug("Found " + strconv.Itoa(len(channelsMap)) + " " + nodeName + " channels")
 
-	openNewChannels(lnd, nodeName, slack, channelsMap)
-	closeTimedOutChannels(lnd, nodeName, slack, inactiveTimes, channelsMap)
+	openNewChannels(lnd, nodeName, discord, channelsMap)
+	closeTimedOutChannels(lnd, nodeName, discord, inactiveTimes, channelsMap)
 
 	saveInactiveTimes(dataPath, inactiveTimes)
 }
 
-func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, channels map[string]*channelType) {
+func openNewChannels(lnd *lndclient.Lnd, nodeName string, discord *discordclient.Discord, channels map[string]*channelType) {
 	peers, err := lnd.ListPeers()
 	rate := 1
 
@@ -96,7 +96,7 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 		if !hasChannel {
 			message := "Opening new " + nodeName + " channel to: " + peer.PubKey
 			log.Info(message)
-			slack.SendMessage(message)
+			discord.SendMessage(message)
 
 			_, err := lnd.OpenChannel(lnrpc.OpenChannelRequest{
 				NodePubkeyString:   peer.PubKey,
@@ -105,8 +105,11 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 			})
 
 			if err != nil {
-				logCouldNotConnect(nodeName, err)
-				slack.SendMessage("Failed to open new " + nodeName + " channel with " + peer.PubKey + ": " + err.Error())
+				// Ignore common LND error and retry opening the channel next iteration
+				if err.Error() != "rpc error: code = Code(102) desc = Synchronizing blockchain" {
+					logCouldNotConnect(nodeName, err)
+					discord.SendMessage("Failed to open new " + nodeName + " channel with " + peer.PubKey + ": " + err.Error())
+				}
 
 				return
 			}
@@ -117,7 +120,7 @@ func openNewChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Sla
 	}
 }
 
-func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclient.Slack, inactiveTimes map[string]time.Time, channels map[string]*channelType) {
+func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, discord *discordclient.Discord, inactiveTimes map[string]time.Time, channels map[string]*channelType) {
 	now := time.Now()
 
 	for remotePubKey, channel := range channels {
@@ -132,7 +135,7 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclie
 				if now.Sub(lastSeen) > channelCloseTimeout {
 					message := "Closing " + nodeName + " channel to: " + remotePubKey
 					log.Info(message)
-					slack.SendMessage(message)
+					discord.SendMessage(message)
 					err := lnd.CloseChannel(lnrpc.CloseChannelRequest{
 						ChannelPoint: getChannelPoint(channel.channelPoint),
 						Force:        true,
@@ -140,7 +143,7 @@ func closeTimedOutChannels(lnd *lndclient.Lnd, nodeName string, slack *slackclie
 
 					if err != nil {
 						logCouldNotConnect(nodeName, err)
-						slack.SendMessage("Failed to close " + nodeName + " channel " + channel.channelPoint + ": " + err.Error())
+						discord.SendMessage("Failed to close " + nodeName + " channel " + channel.channelPoint + ": " + err.Error())
 
 						return
 					}

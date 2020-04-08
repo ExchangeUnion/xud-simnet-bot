@@ -1,4 +1,4 @@
-package channels
+package lndchannels
 
 import (
 	"github.com/lightningnetwork/lnd/lnrpc"

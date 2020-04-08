@@ -10,6 +10,7 @@ import (
 
 var xud *xudclient.Xud
 var mode string
+
 //var swaps = 0
 
 var openOrders = make(map[string]*openOrder)
@@ -18,7 +19,7 @@ type placeOrderParameters struct {
 	price    float64
 	quantity uint64
 	side     xudrpc.OrderSide
-	pairId   string
+	pairID   string
 }
 
 type openOrder struct {
@@ -67,7 +68,6 @@ func subscribeAddedOrders() error {
 	return err
 }
 
-
 func subscribeRemovedOrders() error {
 	err := xud.SubscribeRemovedOrders(orderRemoved)
 	log.Infof("SubscribeRemovedOrders: exiting %v", err)
@@ -75,89 +75,267 @@ func subscribeRemovedOrders() error {
 }
 
 func placeOrders() error {
-
 	orders := []placeOrderParameters{
+		// BTC/DAI orders
 		{
-			price:    0.0305,
-			quantity: 3.5*1E8,
+			price:    9998,
+			quantity: 3.5 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairId:	  "WETH/BTC",
+			pairID:   "BTC/DAI",
 		},
 		{
-			price:    0.0315,
-			quantity: 3.5*1E8,
-			side:     xudrpc.OrderSide_SELL,
-			pairId:	  "WETH/BTC",
+			price:    9997,
+			quantity: 15.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "BTC/DAI",
 		},
+		{
+			price:    9996,
+			quantity: 18 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    9995,
+			quantity: 21.25 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    9994,
+			quantity: 24 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "BTC/DAI",
+		},
+
+		{
+			price:    10000,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10001,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10002,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10003,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+		{
+			price:    10004,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "BTC/DAI",
+		},
+
+		// LTC/BTC orders
 		{
 			price:    0.0077,
-			quantity: 3.5*1E8,
+			quantity: 3.5 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0076,
-			quantity: 15.5*1E8,
+			quantity: 15.5 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0075,
-			quantity: 18.0*1E8,
+			quantity: 18.0 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0074,
-			quantity: 21.25*1E8,
+			quantity: 21.25 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0073,
-			quantity: 24.0*1E8,
+			quantity: 24.0 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0079,
-			quantity: 2.5*1E8,
+			quantity: 2.5 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0080,
-			quantity: 13*1E8,
+			quantity: 13 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0081,
-			quantity: 15.6*1E8,
+			quantity: 15.6 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0082,
-			quantity: 18.1*1E8,
+			quantity: 18.1 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		},
 		{
 			price:    0.0083,
-			quantity: 22.3*1E8,
+			quantity: 22.3 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
+		},
+
+		// LTC/DAI orders
+		{
+			price:    98,
+			quantity: 3.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    97,
+			quantity: 15.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    96,
+			quantity: 18 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    95,
+			quantity: 21.25 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    94,
+			quantity: 24 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "LTC/DAI",
+		},
+
+		{
+			price:    100,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    101,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+
+		{
+			price:    102,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    103,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+		{
+			price:    104,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "LTC/DAI",
+		},
+
+		// WETH/BTC orders
+		{
+			price:    0.021,
+			quantity: 3.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.02,
+			quantity: 15.5 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.019,
+			quantity: 18 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.018,
+			quantity: 21.25 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.017,
+			quantity: 24 * 1E8,
+			side:     xudrpc.OrderSide_BUY,
+			pairID:   "WETH/BTC",
+		},
+
+		{
+			price:    0.023,
+			quantity: 2.5 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.024,
+			quantity: 13 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.025,
+			quantity: 15.6 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.026,
+			quantity: 18.1 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
+		},
+		{
+			price:    0.027,
+			quantity: 22.3 * 1E8,
+			side:     xudrpc.OrderSide_SELL,
+			pairID:   "WETH/BTC",
 		},
 	}
 
-	switch  mode {
+	switch mode {
 	case "standard":
 		for _, order := range orders {
 			err := placeOrder(order)
 			if err != nil {
 				log.Errorf("Could not place orders: %v - %v", order, err)
-			//	return err
+				//	return err
 			}
 		}
 		log.Debug("Placed orders")
@@ -165,9 +343,9 @@ func placeOrders() error {
 	case "2.5@0.0079":
 		order := placeOrderParameters{
 			price:    0.0079,
-			quantity: 2.5*1E8,
+			quantity: 2.5 * 1E8,
 			side:     xudrpc.OrderSide_BUY,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		}
 		err := fillOrKill(order)
 		if err != nil {
@@ -178,9 +356,9 @@ func placeOrders() error {
 	case "3.5@0.0077":
 		order := placeOrderParameters{
 			price:    0.0077,
-			quantity: 3.5*1E8,
+			quantity: 3.5 * 1E8,
 			side:     xudrpc.OrderSide_SELL,
-			pairId:	  "LTC/BTC",
+			pairID:   "LTC/BTC",
 		}
 		err := fillOrKill(order)
 		if err != nil {
@@ -200,22 +378,20 @@ func placeOrder(params placeOrderParameters) error {
 		Price:    params.price,
 		Quantity: params.quantity,
 		Side:     params.side,
-		PairId:   params.pairId,
+		PairId:   params.pairID,
 	}
 	log.Debugf("Placing order: %v ", req)
 	response, err := xud.PlaceOrderSync(req)
-
 
 	if err != nil {
 		return err
 	}
 
-	//if response.SwapResults != nil {
-	//	log.Debugf("Swapped: %v ", response.SwapResults)
-	//}
+	// if response.SwapResults != nil {
+	// 	log.Debugf("Swapped: %v ", response.SwapResults)
+	// }
 
 	var remainingOrder = response.RemainingOrder
-
 
 	// check - why this should be done? maybe the stream opens after the orders?
 	// Place a new order until there is quantity remaining
@@ -239,7 +415,7 @@ func fillOrKill(params placeOrderParameters) error {
 		Price:    params.price,
 		Quantity: params.quantity,
 		Side:     params.side,
-		PairId:   params.pairId,
+		PairId:   params.pairID,
 	}
 	log.Debugf("Placing FOK order: %v ", req)
 	response, err := xud.PlaceOrderSync(req)
@@ -254,12 +430,12 @@ func fillOrKill(params placeOrderParameters) error {
 	//	log.Debugf("#%v FOK Swapped: %v ", swaps, response.SwapResults)
 	//}
 
-	if (response.RemainingOrder != nil) {
+	if response.RemainingOrder != nil {
 		killReq := &xudrpc.RemoveOrderRequest{
-			OrderId:	response.RemainingOrder.Id,
+			OrderId: response.RemainingOrder.Id,
 		}
 		resp, err := xud.Client.RemoveOrder(xud.Ctx, killReq)
-		if (err != nil) {
+		if err != nil {
 			log.Errorf("Failed to remove Remaining order : %v", resp.String())
 			return err
 		}
@@ -289,7 +465,6 @@ func orderRemoved(update xudrpc.OrderUpdate) {
 	}
 }
 
-
 func orderAdded(update xudrpc.OrderUpdate) {
 	newOrder := update.GetOrder()
 	if newOrder == nil {
@@ -304,9 +479,9 @@ func orderAdded(update xudrpc.OrderUpdate) {
 			log.Debug("Order detected: %v", newOrder)
 			order := placeOrderParameters{
 				price:    0.0079,
-				quantity: 2.5*1E8,
+				quantity: 2.5 * 1E8,
 				side:     xudrpc.OrderSide_BUY,
-				pairId:   "LTC/BTC",
+				pairID:   "LTC/BTC",
 			}
 			err := fillOrKill(order)
 			if err != nil {
@@ -320,9 +495,9 @@ func orderAdded(update xudrpc.OrderUpdate) {
 			log.Debug("Order detected: %v", newOrder)
 			order := placeOrderParameters{
 				price:    0.0077,
-				quantity: 3.5*1E8,
+				quantity: 3.5 * 1E8,
 				side:     xudrpc.OrderSide_SELL,
-				pairId:	  "LTC/BTC",
+				pairID:   "LTC/BTC",
 			}
 			err := fillOrKill(order)
 			if err != nil {
@@ -333,7 +508,5 @@ func orderAdded(update xudrpc.OrderUpdate) {
 		}
 
 	}
-
-
 
 }

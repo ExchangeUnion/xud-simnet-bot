@@ -27,6 +27,8 @@ type Xud struct {
 
 // OrderRemoved is a callback that allows clients to get notified about order removals
 type OrderRemoved func(order xudrpc.OrderUpdate)
+
+// OrderAdded is a callback that allows clients to get notified about added orders
 type OrderAdded func(order xudrpc.OrderUpdate)
 
 // Init to a XUD node
@@ -51,6 +53,11 @@ func (xud *Xud) Init() error {
 	xud.Client = xudrpc.NewXudClient(con)
 
 	return nil
+}
+
+// ListPeers gets a list of all connected peers
+func (xud *Xud) ListPeers() (*xudrpc.ListPeersResponse, error) {
+	return xud.Client.ListPeers(xud.Ctx, &xudrpc.ListPeersRequest{})
 }
 
 // GetInfo gets general information about the XUD node
@@ -96,8 +103,7 @@ func (xud *Xud) SubscribeRemovedOrders(callback OrderRemoved) error {
 	return streamErr
 }
 
-
-// SubscribeRemovedOrders notifies the Client via a callback about removed orders
+// SubscribeAddedOrders notifies the Client via a callback about removed orders
 func (xud *Xud) SubscribeAddedOrders(callback OrderAdded) error {
 	stream, streamErr := xud.Client.SubscribeOrders(xud.Ctx, &xudrpc.SubscribeOrdersRequest{})
 
