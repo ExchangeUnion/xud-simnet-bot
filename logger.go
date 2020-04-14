@@ -1,35 +1,31 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"os"
 
-	"github.com/ExchangeUnion/xud-tests/discordclient"
-	"github.com/ExchangeUnion/xud-tests/lndchannels"
-	"github.com/ExchangeUnion/xud-tests/trading"
-	"github.com/op/go-logging"
+	"github.com/google/logger"
 )
 
-var log = logging.MustGetLogger("")
-
-func initLogger(logFile string) error {
-	logging.SetFormatter(logging.MustStringFormatter(
-		"%{time:2006/01/02 15:04:05} [%{level}] %{message}",
-	))
-
-	file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+func initLogger(logPath string) {
+	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 
 	if err != nil {
-		return err
+		printFatal("Could not open log file: %s", err)
 	}
 
-	logging.SetBackend(
-		logging.NewLogBackend(os.Stdout, "", 0),
-		logging.NewLogBackend(file, "", 0),
-	)
+	logger.Init("xud-tests", true, true, file)
+	logger.SetFlags(log.LstdFlags)
 
-	trading.UseLogger(*log)
-	lndchannels.UseLogger(*log)
-	discordclient.UseLogger(*log)
+	logger.Info("Initialized logger")
+}
 
-	return nil
+func printFatal(format string, a ...interface{}) {
+	fmt.Printf(format+"\n", a...)
+	os.Exit(1)
+}
+
+func logConfig(cfg *config) {
+	logger.Info("Loaded config: " + stringify(cfg))
 }

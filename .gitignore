@@ -1,6 +1,21 @@
+# Log file
+xud-tests.log
+
+# Config file
+xud-tests.toml
+
+# Database file
+xud-tests.json
+
 # Dependency directory
 vendor/
 
 # Compiled binaries
 xud-tests
 erc20/erc20sender
+
+# VS Code configuration
+.vscode
+
+# GoLand configuration
+.idea

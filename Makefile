@@ -1,18 +1,20 @@
 PKG := github.com/ExchangeUnion/xud-tests
 
-GOBUILD := go build -v
-GOINSTALL := go install -v
-
 GO_BIN := ${GOPATH}/bin
-DEP_BIN := $(GO_BIN)/dep
-LINT_BIN := $(GO_BIN)/gometalinter.v2
 
-HAVE_DEP := $(shell command -v $(DEP_BIN) 2> /dev/null)
-HAVE_LINTER := $(shell command -v $(LINT_BIN) 2> /dev/null)
+GOTEST := GO111MODULE=on go test -v
+GOBUILD := GO111MODULE=on go build -v
+GOINSTALL := GO111MODULE=on go install -v
+GOLIST := go list -deps $(PKG)/... | grep '$(PKG)'| grep -v '/vendor/'
+
+COMMIT := $(shell git log --pretty=format:'%h' -n 1)
+LDFLAGS := -ldflags "-X $(PKG)/build.Commit=$(COMMIT)"
+
+LINT_PKG := github.com/golangci/golangci-lint/cmd/golangci-lint
+LINT_BIN := $(GO_BIN)/golangci-lint
+LINT = $(LINT_BIN) run -v
 
 XARGS := xargs -L 1
-
-default: dep build
 
 GREEN := "\\033[0;32m"
 NC := "\\033[0m"
@@ -21,49 +23,41 @@ define print
 	echo $(GREEN)$1$(NC)
 endef
 
-LIST := go list $(PKG)/... | grep -v '/vendor/'
-LINT_LIST = $(shell go list -f '{{.Dir}}' ./...)
+default: build
 
-XARGS = xargs -L 1
-
-LINT = $(LINT_BIN) \
-	--disable-all \
-	--enable=gofmt \
-	--enable=vet \
-	--enable=golint \
-	--line-length=72 \
-	--deadline=4m $(LINT_LIST) 2>&1 | \
-	grep -v 'ALL_CAPS\|OP_' 2>&1 | \
-	tee /dev/stderr
-
+#
 # Dependencies
+#
+
 $(LINT_BIN):
-	@$(call print, "Fetching gometalinter.v2")
-	go get -u gopkg.in/alecthomas/gometalinter.v2
+	@$(call print, "Fetching linter")
+	go get -u $(LINT_PKG)
 
-$(DEP_BIN):
-	@$(call print, "Fetching dep")
-	go get -u github.com/golang/dep/cmd/dep
+dependencies: $(LINT_BIN)
+	go mod vendor
 
-dep: $(DEP_BIN)
-	@$(call print, "Compiling dependencies")
-	dep ensure -v
-
+#
 # Building
+#
+
 build:
 	@$(call print, "Building xud-tests")
-	$(GOBUILD) -o xud-tests $(PKG)
+	$(GOBUILD) -o xud-tests $(LDFLAGS) $(PKG)
 
 install:
 	@$(call print, "Installing xud-tests")
-	$(GOINSTALL) $(PKG)
+	$(GOINSTALL) $(LDFLAGS) $(PKG)
 
+#
 # Utils
+#
+
 fmt:
 	@$(call print, "Formatting source")
-	$(LIST) | $(XARGS) go fmt -x
+	gofmt -l -s -w .
 
 lint: $(LINT_BIN)
 	@$(call print, "Linting source")
-	$(LINT_BIN) --install 1> /dev/null
-	test -z "$$($(LINT))"
+	$(LINT)
+
+.PHONY: build

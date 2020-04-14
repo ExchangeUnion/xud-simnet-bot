@@ -1,100 +1,59 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"sync"
-
-	"github.com/ExchangeUnion/xud-tests/lndchannels"
-	"github.com/ExchangeUnion/xud-tests/lndclient"
-	"github.com/ExchangeUnion/xud-tests/raidenchannels"
-	"github.com/ExchangeUnion/xud-tests/trading"
+	"github.com/ExchangeUnion/xud-tests/xudrpc"
+	"github.com/google/logger"
 )
 
-var wg sync.WaitGroup
-
 func main() {
-	if err := initConfig(); err != nil {
-		printErrorAndExit("Could not initialize config:", err)
-	}
+	cfg := loadConfig()
+	initLogger(cfg.LogFile)
+	logConfig(cfg)
 
-	if err := initLogger(cfg.LogPath); err != nil {
-		printErrorAndExit("Could not initialize logger:", err)
-	}
+	info := initXud(cfg)
+	initDiscord(cfg, info)
 
-	cfg.Discord.Init()
+	cfg.Database.Init()
+
+	cfg.ChannelManager.Init(cfg.Channels, cfg.Xud, cfg.Discord, cfg.Database)
+
+	logger.Info("Shutting down")
+}
+
+func initXud(cfg *config) *xudrpc.GetInfoResponse {
+	logger.Info("Initializing XUD client")
+
 	err := cfg.Xud.Init()
+	checkError("XUD", err, true)
 
-	if !cfg.DisableTrading {
-		log.Infof("Starting trading bot with %v mode", cfg.TradingMode)
+	info, err := cfg.Xud.GetInfo()
+	checkError("XUD", err, true)
 
-		if err == nil {
-			trading.InitTradingBot(&wg, cfg.Xud, cfg.TradingMode)
+	logger.Info("Initialized XUD client: " + stringify(info))
+
+	return info
+}
+
+func initDiscord(cfg *config, info *xudrpc.GetInfoResponse) {
+	logger.Info("Initializing Discord client")
+
+	err := cfg.Discord.Init()
+	checkError("Discord", err, false)
+
+	err = cfg.Discord.SendMessage("Started xud-tests with XUD node: **" + info.Alias + "** (`" + info.NodePubKey + "`)")
+	checkError("Discord", err, false)
+
+	logger.Info("Initialized Discord client")
+}
+
+func checkError(service string, err error, fatal bool) {
+	if err != nil {
+		message := "Could not initialize " + service + ": " + err.Error()
+
+		if fatal {
+			logger.Fatal(message)
 		} else {
-			printErrorAndExit("Could not read required files for XUD:", err)
+			logger.Warning(message)
 		}
 	}
-
-	if !cfg.DisableChannelManager {
-		if !xudCfg.LndConfigs.Btc.Disable {
-			initChannelManager(xudCfg.LndConfigs.Btc, true)
-		}
-
-		if !xudCfg.LndConfigs.Ltc.Disable {
-			initChannelManager(xudCfg.LndConfigs.Ltc, false)
-		}
-
-		if !cfg.Ethereum.Disable {
-			if !xudCfg.Raiden.Disable {
-				log.Info("Starting Raiden channel manager")
-
-				err := cfg.Ethereum.Init()
-
-				if err != nil {
-					log.Error("Could not start Ethereum client: %v", err)
-					return
-				}
-
-				xudCfg.Raiden.Init()
-
-				raidenchannels.InitChannelManager(
-					&wg,
-					cfg.Xud,
-					xudCfg.Raiden,
-					cfg.Ethereum,
-					cfg.Discord,
-					parsedTokens,
-					cfg.DataDir,
-				)
-			}
-		}
-	}
-
-	cfg.Discord.SendMessage("Started bot")
-
-	wg.Wait()
-	log.Warning("All services died")
-}
-
-func initChannelManager(lnd *lndclient.Lnd, isBtc bool) {
-	nodeName := "lndbtc"
-
-	if !isBtc {
-		nodeName = "lndltc"
-	}
-
-	log.Info("Starting channel manager for %v", nodeName)
-
-	err := lnd.Init()
-
-	if err == nil {
-		lndchannels.InitChannelManager(&wg, lnd, cfg.Discord, cfg.DataDir, nodeName)
-	} else {
-		printErrorAndExit("Could not read required files for", nodeName, ":", err)
-	}
-}
-
-func printErrorAndExit(messages ...interface{}) {
-	fmt.Println(messages...)
-	os.Exit(1)
 }
