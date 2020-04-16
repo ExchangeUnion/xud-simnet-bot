@@ -7,6 +7,7 @@ import (
 	"github.com/ExchangeUnion/xud-simnet-bot/channels"
 	"github.com/ExchangeUnion/xud-simnet-bot/database"
 	"github.com/ExchangeUnion/xud-simnet-bot/discord"
+	"github.com/ExchangeUnion/xud-simnet-bot/faucet"
 	"github.com/ExchangeUnion/xud-simnet-bot/xudrpc"
 	"github.com/jessevdk/go-flags"
 	"os"
@@ -27,6 +28,9 @@ type config struct {
 	Database       *database.Database       `group:"Database options"`
 	ChannelManager *channels.ChannelManager `group:"Channel Manager Options"`
 
+	Faucet   *faucet.Faucet   `group:"Faucet"`
+	Ethereum *faucet.Ethereum `group:"Ethereum"`
+
 	// This option is only parsed in the TOML config file
 	Channels []*channels.Channel
 
@@ -40,6 +44,14 @@ func loadConfig() *config {
 
 		Database: &database.Database{
 			FileName: "./xud-simnet-bot.json",
+		},
+
+		Faucet: &faucet.Faucet{
+			Port: 9000,
+		},
+
+		Ethereum: &faucet.Ethereum{
+			RPCHost: "http://130.211.223.61:8545",
 		},
 	}
 
