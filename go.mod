@@ -1,4 +1,4 @@
-module github.com/ExchangeUnion/xud-tests
+module github.com/ExchangeUnion/xud-simnet-bot
 
 go 1.14
 

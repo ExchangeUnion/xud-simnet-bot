@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/ExchangeUnion/xud-tests/build"
-	"github.com/ExchangeUnion/xud-tests/channels"
-	"github.com/ExchangeUnion/xud-tests/database"
-	"github.com/ExchangeUnion/xud-tests/discord"
-	"github.com/ExchangeUnion/xud-tests/xudrpc"
+	"github.com/ExchangeUnion/xud-simnet-bot/build"
+	"github.com/ExchangeUnion/xud-simnet-bot/channels"
+	"github.com/ExchangeUnion/xud-simnet-bot/database"
+	"github.com/ExchangeUnion/xud-simnet-bot/discord"
+	"github.com/ExchangeUnion/xud-simnet-bot/xudrpc"
 	"github.com/jessevdk/go-flags"
 	"os"
 )
@@ -35,11 +35,11 @@ type config struct {
 
 func loadConfig() *config {
 	cfg := config{
-		LogFile:    "./xud-tests.log",
-		ConfigFile: "./xud-tests.toml",
+		LogFile:    "./xud-simnet-bot.log",
+		ConfigFile: "./xud-simnet-bot.toml",
 
 		Database: &database.Database{
-			FileName: "./xud-tests.json",
+			FileName: "./xud-simnet-bot.json",
 		},
 	}
 

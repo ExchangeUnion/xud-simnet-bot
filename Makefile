@@ -1,4 +1,4 @@
-PKG := github.com/ExchangeUnion/xud-tests
+PKG := github.com/ExchangeUnion/xud-simnet-bot
 
 GO_BIN := ${GOPATH}/bin
 
@@ -41,11 +41,11 @@ dependencies: $(LINT_BIN)
 #
 
 build:
-	@$(call print, "Building xud-tests")
-	$(GOBUILD) -o xud-tests $(LDFLAGS) $(PKG)
+	@$(call print, "Building xud-simnet-bot")
+	$(GOBUILD) -o xud-simnet-bot $(LDFLAGS) $(PKG)
 
 install:
-	@$(call print, "Installing xud-tests")
+	@$(call print, "Installing xud-simnet-bot")
 	$(GOINSTALL) $(LDFLAGS) $(PKG)
 
 #

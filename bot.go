@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ExchangeUnion/xud-tests/xudrpc"
+	"github.com/ExchangeUnion/xud-simnet-bot/xudrpc"
 	"github.com/google/logger"
 )
 
@@ -40,7 +40,7 @@ func initDiscord(cfg *config, info *xudrpc.GetInfoResponse) {
 	err := cfg.Discord.Init()
 	checkError("Discord", err, false)
 
-	err = cfg.Discord.SendMessage("Started xud-tests with XUD node: **" + info.Alias + "** (`" + info.NodePubKey + "`)")
+	err = cfg.Discord.SendMessage("Started xud-simnet-bot with XUD node: **" + info.Alias + "** (`" + info.NodePubKey + "`)")
 	checkError("Discord", err, false)
 
 	logger.Info("Initialized Discord client")

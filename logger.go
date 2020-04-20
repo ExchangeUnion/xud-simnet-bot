@@ -15,7 +15,7 @@ func initLogger(logPath string) {
 		printFatal("Could not open log file: %s", err)
 	}
 
-	logger.Init("xud-tests", true, true, file)
+	logger.Init("xud-simnet-bot", true, true, file)
 	logger.SetFlags(log.LstdFlags)
 
 	logger.Info("Initialized logger")
