@@ -1,18 +1,17 @@
 # Log file
-xud-tests.log
+xud-simnet-bot.log
 
 # Config file
-xud-tests.toml
+xud-simnet-bot.toml
 
 # Database file
-xud-tests.json
+xud-simnet-bot.json
 
 # Dependency directory
 vendor/
 
 # Compiled binaries
-xud-tests
-erc20/erc20sender
+xud-simnet-bot
 
 # VS Code configuration
 .vscode

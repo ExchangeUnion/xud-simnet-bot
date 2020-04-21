@@ -1,9 +1,9 @@
 package channels
 
 import (
-	"github.com/ExchangeUnion/xud-tests/database"
-	"github.com/ExchangeUnion/xud-tests/discord"
-	"github.com/ExchangeUnion/xud-tests/xudrpc"
+	"github.com/ExchangeUnion/xud-simnet-bot/database"
+	"github.com/ExchangeUnion/xud-simnet-bot/discord"
+	"github.com/ExchangeUnion/xud-simnet-bot/xudrpc"
 	"github.com/google/logger"
 	"time"
 )
