@@ -5,27 +5,54 @@ import (
 	"github.com/ExchangeUnion/xud-simnet-bot/discord"
 	"github.com/ExchangeUnion/xud-simnet-bot/xudrpc"
 	"github.com/google/logger"
+	"math"
+	"strings"
 	"time"
 )
 
 type ChannelManager struct {
 	Interval int `long:"manager.interval" default:"20" description:"Interval in seconds at which new channels should be opened"`
 
-	channels []*Channel
+	channels []Channel
 
 	xud      *xudrpc.Xud
 	discord  *discord.Discord
 	database *database.Database
 }
 
+// This struct has a dualistic nature:
+// 1. Lightning channel creations
+//    "Currency", "Amount" and "PushAmount" need to be set
+//
+// 2. Ethereum token faucet
+//    "Currency", "TokenAddress", "Amount" need to be set
+//
+//    If the "TokenAddress" is set or the "Currency" equals "ETH"
+//    no channels will be created for that currency but the faucet
+//    will send tokens on request
 type Channel struct {
-	Currency   string
-	Amount     int64
-	PushAmount int64
+	// Symbol of the currency
+	Currency string
+	// Address of the Ethereum token
+	TokenAddress string
+	// Capacity of the channel or amount of token that should be sent
+	Amount float64
+	// Amount that should be pushed to the other side in case of a channel creation
+	PushAmount float64
 }
 
-func (manager *ChannelManager) Init(channels []*Channel, xud *xudrpc.Xud, discord *discord.Discord, database *database.Database) {
+var decimals = math.Pow(10, 8)
+
+func (manager *ChannelManager) Init(channels []Channel, xud *xudrpc.Xud, discord *discord.Discord, database *database.Database) {
 	logger.Info("Initializing channel manager")
+
+	var channelNames []string
+
+	for _, channel := range channels {
+		channelNames = append(channelNames, channel.Currency)
+	}
+
+	logger.Info("Channel manager currencies: " + strings.Join(channelNames, ", "))
 
 	manager.channels = channels
 
@@ -82,8 +109,8 @@ func (manager *ChannelManager) openChannels() {
 			_ = manager.discord.SendMessage(message)
 
 			_, err := manager.xud.OpenChannel(&xudrpc.OpenChannelRequest{
-				Amount:         channel.Amount,
-				PushAmount:     channel.PushAmount,
+				Amount:         coinsToSatoshis(channel.Amount),
+				PushAmount:     coinsToSatoshis(channel.PushAmount),
 				Currency:       channel.Currency,
 				NodeIdentifier: peer.NodePubKey,
 			})
@@ -105,4 +132,8 @@ func (manager *ChannelManager) openChannels() {
 		}
 
 	}
+}
+
+func coinsToSatoshis(coins float64) int64 {
+	return int64(math.Round(coins * decimals))
 }

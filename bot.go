@@ -1,8 +1,10 @@
 package main
 
 import (
+	"github.com/ExchangeUnion/xud-simnet-bot/channels"
 	"github.com/ExchangeUnion/xud-simnet-bot/xudrpc"
 	"github.com/google/logger"
+	"sync"
 )
 
 func main() {
@@ -10,13 +12,44 @@ func main() {
 	initLogger(cfg.LogFile)
 	logConfig(cfg)
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	info := initXud(cfg)
 	initDiscord(cfg, info)
 
-	cfg.Database.Init()
+	logger.Info("Sanitizing currencies")
 
-	cfg.ChannelManager.Init(cfg.Channels, cfg.Xud, cfg.Discord, cfg.Database)
+	var faucetCurrencies []channels.Channel
+	var channelCurrencies []channels.Channel
 
+	for i := range cfg.Channels {
+		entry := cfg.Channels[i]
+
+		if entry.TokenAddress == "" && entry.Currency != "ETH" {
+			channelCurrencies = append(channelCurrencies, *entry)
+		} else {
+			faucetCurrencies = append(faucetCurrencies, *entry)
+		}
+	}
+
+	go func() {
+		cfg.Database.Init()
+
+		cfg.ChannelManager.Init(channelCurrencies, cfg.Xud, cfg.Discord, cfg.Database)
+		wg.Done()
+	}()
+
+	go func() {
+		err := cfg.Ethereum.Init()
+
+		checkError("Ethereum", err, true)
+
+		cfg.Faucet.Start(faucetCurrencies, cfg.Ethereum, cfg.Discord)
+		wg.Done()
+	}()
+
+	wg.Wait()
 	logger.Info("Shutting down")
 }
 
@@ -38,10 +71,10 @@ func initDiscord(cfg *config, info *xudrpc.GetInfoResponse) {
 	logger.Info("Initializing Discord client")
 
 	err := cfg.Discord.Init()
-	checkError("Discord", err, false)
+	checkError("Discord", err, true)
 
 	err = cfg.Discord.SendMessage("Started xud-simnet-bot with XUD node: **" + info.Alias + "** (`" + info.NodePubKey + "`)")
-	checkError("Discord", err, false)
+	checkError("Discord", err, true)
 
 	logger.Info("Initialized Discord client")
 }

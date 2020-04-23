@@ -6,5 +6,3 @@ go:
 
 script:
     - make build
-    - make dependencies
-    - make lint
