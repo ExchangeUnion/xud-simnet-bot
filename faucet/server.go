@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Faucet struct {
@@ -37,13 +38,20 @@ var decimals = big.NewFloat(math.Pow(10, 18))
 func (faucet *Faucet) Start(channels []*channels.Channel, eth *Ethereum, discord *discord.Discord) {
 	logger.Info("Starting faucet at port: " + strconv.Itoa(faucet.Port))
 
+	var channelNames []string
+
 	for i := len(channels) - 1; i >= 0; i-- {
 		entry := channels[i]
 
 		if entry.TokenAddress == "" && entry.Currency != "ETH" {
 			channels = channels[:i+copy(channels[i:], channels[i+1:])]
+		} else {
+			channelNames = append(channelNames, entry.Currency)
 		}
 	}
+
+	logger.Info("Faucet currencies: " + strings.Join(channelNames, ", "))
+
 
 	faucet.channels = channels
 
