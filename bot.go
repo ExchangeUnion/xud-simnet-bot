@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/ExchangeUnion/xud-simnet-bot/channels"
 	"github.com/ExchangeUnion/xud-simnet-bot/xudrpc"
 	"github.com/google/logger"
 	"sync"
@@ -17,10 +18,25 @@ func main() {
 	info := initXud(cfg)
 	initDiscord(cfg, info)
 
+	logger.Info("Sanitizing currencies")
+
+	var faucetCurrencies []channels.Channel
+	var channelCurrencies []channels.Channel
+
+	for i := range cfg.Channels {
+		entry := cfg.Channels[i]
+
+		if entry.TokenAddress == "" && entry.Currency != "ETH" {
+			channelCurrencies = append(channelCurrencies, *entry)
+		} else {
+			faucetCurrencies = append(faucetCurrencies, *entry)
+		}
+	}
+
 	go func() {
 		cfg.Database.Init()
 
-		cfg.ChannelManager.Init(cfg.Channels, cfg.Xud, cfg.Discord, cfg.Database)
+		cfg.ChannelManager.Init(channelCurrencies, cfg.Xud, cfg.Discord, cfg.Database)
 		wg.Done()
 	}()
 
@@ -29,7 +45,7 @@ func main() {
 
 		checkError("Ethereum", err, true)
 
-		cfg.Faucet.Start(cfg.Channels, cfg.Ethereum, cfg.Discord)
+		cfg.Faucet.Start(faucetCurrencies, cfg.Ethereum, cfg.Discord)
 		wg.Done()
 	}()
 

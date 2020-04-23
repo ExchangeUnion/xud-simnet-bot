@@ -15,7 +15,7 @@ import (
 type Faucet struct {
 	Port int `long:"faucet.port" description:"Port to which the HTTP server of the faucet will listen"`
 
-	channels []*channels.Channel
+	channels []channels.Channel
 
 	eth     *Ethereum
 	discord *discord.Discord
@@ -35,19 +35,13 @@ type errorResponse struct {
 
 var decimals = big.NewFloat(math.Pow(10, 18))
 
-func (faucet *Faucet) Start(channels []*channels.Channel, eth *Ethereum, discord *discord.Discord) {
+func (faucet *Faucet) Start(channels []channels.Channel, eth *Ethereum, discord *discord.Discord) {
 	logger.Info("Starting faucet at port: " + strconv.Itoa(faucet.Port))
 
 	var channelNames []string
 
-	for i := len(channels) - 1; i >= 0; i-- {
-		entry := channels[i]
-
-		if entry.TokenAddress == "" && entry.Currency != "ETH" {
-			channels = channels[:i+copy(channels[i:], channels[i+1:])]
-		} else {
-			channelNames = append(channelNames, entry.Currency)
-		}
+	for _, channel := range channels {
+		channelNames = append(channelNames, channel.Currency)
 	}
 
 	logger.Info("Faucet currencies: " + strings.Join(channelNames, ", "))

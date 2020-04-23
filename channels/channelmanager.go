@@ -13,7 +13,7 @@ import (
 type ChannelManager struct {
 	Interval int `long:"manager.interval" default:"20" description:"Interval in seconds at which new channels should be opened"`
 
-	channels []*Channel
+	channels []Channel
 
 	xud      *xudrpc.Xud
 	discord  *discord.Discord
@@ -43,19 +43,13 @@ type Channel struct {
 
 var decimals = math.Pow(10, 8)
 
-func (manager *ChannelManager) Init(channels []*Channel, xud *xudrpc.Xud, discord *discord.Discord, database *database.Database) {
+func (manager *ChannelManager) Init(channels []Channel, xud *xudrpc.Xud, discord *discord.Discord, database *database.Database) {
 	logger.Info("Initializing channel manager")
 
 	var channelNames []string
 
-	for i := len(channels) - 1; i >= 0; i-- {
-		entry := channels[i]
-
-		if entry.TokenAddress != "" || entry.Currency == "ETH" {
-			channels = channels[:i+copy(channels[i:], channels[i+1:])]
-		} else {
-			channelNames = append(channelNames, entry.Currency)
-		}
+	for _, channel := range channels {
+		channelNames = append(channelNames, channel.Currency)
 	}
 
 	logger.Info("Channel manager currencies: " + strings.Join(channelNames, ", "))
