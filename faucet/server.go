@@ -46,7 +46,6 @@ func (faucet *Faucet) Start(channels []channels.Channel, eth *Ethereum, discord 
 
 	logger.Info("Faucet currencies: " + strings.Join(channelNames, ", "))
 
-
 	faucet.channels = channels
 
 	faucet.eth = eth
@@ -78,14 +77,21 @@ func (faucet *Faucet) Start(channels []channels.Channel, eth *Ethereum, discord 
 			writeResponse(writer, 400, errorResponse{
 				Error: "could not send tokens: " + err.Error(),
 			})
-			_ = discord.SendMessage("Could not send tokens: " + err.Error())
+
+			message := "Could not send tokens: " + err.Error()
+
+			logger.Warning(message)
+			_ = discord.SendMessage(message)
 
 			return
 		}
 
 		writeResponse(writer, 200, response)
 
-		_ = discord.SendMessage("Sent tokens to `" + resultBody.Address + "`")
+		message := "Sent tokens to `" + resultBody.Address + "`"
+
+		logger.Info(message)
+		_ = discord.SendMessage(message)
 	})
 
 	err := http.ListenAndServe("0.0.0.0:"+strconv.Itoa(faucet.Port), nil)
