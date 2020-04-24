@@ -115,22 +115,20 @@ func (manager *ChannelManager) openChannels() {
 				NodeIdentifier: peer.NodePubKey,
 			})
 
-			if err != nil {
-				// Ignore common LND error and retry opening the channel next iteration
-				if err.Error() == "rpc error: code = Code(102) desc = Synchronizing blockchain" {
-					continue
-				}
+			if err == nil {
+				manager.database.AddChannelsOpened(peer.NodePubKey, channel.Currency)
 
+				message := "Opened " + channel.Currency + " channel to " + nodeInfo
+
+				logger.Info(message)
+				_ = manager.discord.SendMessage(message)
+			} else {
 				message = "Could not open " + channel.Currency + " channel to " + nodeInfo + ": " + err.Error()
 
 				logger.Warning(message)
 				_ = manager.discord.SendMessage(message)
-				continue
 			}
-
-			manager.database.AddChannelsOpened(peer.NodePubKey, channel.Currency)
 		}
-
 	}
 }
 
