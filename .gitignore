@@ -8,6 +8,7 @@ xud-simnet-bot.toml
 xud-simnet-bot.json
 
 # Temporary keystore files
+keystore.json
 tmpKeyStore/
 
 # Dependency directory

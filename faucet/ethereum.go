@@ -20,7 +20,7 @@ var sendLock = &sync.Mutex{}
 var gasPrice = big.NewInt(1000000000)
 
 var ethTransferGasLimit = uint64(21000)
-var erc20TransferGasLimit = uint64(50000)
+var erc20TransferGasLimit = uint64(500000)
 
 type Ethereum struct {
 	RPCHost      string `long:"eth.rpcuri" description:"URI of the RPC interface of an Ethereum client"`
@@ -95,11 +95,13 @@ func (eth *Ethereum) SendEther(address string, amount *big.Int) error {
 	transaction := types.NewTransaction(eth.nonce, recipient, amount, ethTransferGasLimit, gasPrice, nil)
 	transaction, err := eth.keystore.SignTx(eth.account, transaction, eth.chainID)
 
-	eth.nonce += 1
-
 	if err != nil {
 		return err
 	}
+
+	logger.Info("Sending ETH to " + address + ": " + transaction.Hash().String())
+
+	eth.nonce += 1
 
 	return eth.client.SendTransaction(eth.ctx, transaction)
 }
@@ -132,11 +134,13 @@ func (eth *Ethereum) SendToken(token string, address string, amount string) erro
 	transaction := types.NewTransaction(eth.nonce, tokenAddress, big.NewInt(0), erc20TransferGasLimit, gasPrice, data)
 	transaction, err = eth.keystore.SignTx(eth.account, transaction, eth.chainID)
 
-	eth.nonce += 1
-
 	if err != nil {
 		return err
 	}
+
+	logger.Info("Sending " + token + " to " + address + ": " + transaction.Hash().String())
+
+	eth.nonce += 1
 
 	return eth.client.SendTransaction(eth.ctx, transaction)
 }
