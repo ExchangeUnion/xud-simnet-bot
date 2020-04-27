@@ -34,6 +34,8 @@ type Ethereum struct {
 
 	keystore *keystore.KeyStore
 	account  accounts.Account
+
+	nonce uint64
 }
 
 func (eth *Ethereum) Init() error {
@@ -73,6 +75,12 @@ func (eth *Ethereum) Init() error {
 		return err
 	}
 
+	eth.nonce, err = eth.client.PendingNonceAt(eth.ctx, eth.account.Address)
+
+	if err != nil {
+		return err
+	}
+
 	logger.Info("Initialized Ethereum client with address: " + eth.account.Address.String())
 
 	return nil
@@ -82,16 +90,12 @@ func (eth *Ethereum) SendEther(address string, amount *big.Int) error {
 	sendLock.Lock()
 	defer sendLock.Unlock()
 
-	nonce, err := eth.client.PendingNonceAt(eth.ctx, eth.account.Address)
-
-	if err != nil {
-		return err
-	}
-
 	recipient := common.HexToAddress(address)
 
-	transaction := types.NewTransaction(nonce, recipient, amount, ethTransferGasLimit, gasPrice, nil)
-	transaction, err = eth.keystore.SignTx(eth.account, transaction, eth.chainID)
+	transaction := types.NewTransaction(eth.nonce, recipient, amount, ethTransferGasLimit, gasPrice, nil)
+	transaction, err := eth.keystore.SignTx(eth.account, transaction, eth.chainID)
+
+	eth.nonce += 1
 
 	if err != nil {
 		return err
@@ -104,19 +108,13 @@ func (eth *Ethereum) SendToken(token string, address string, amount string) erro
 	sendLock.Lock()
 	defer sendLock.Unlock()
 
-	nonce, err := eth.client.PendingNonceAt(eth.ctx, eth.account.Address)
-
-	if err != nil {
-		return err
-	}
-
 	tokenAddress := common.HexToAddress(token)
 	recipient := common.HexToAddress(address)
 
 	transferFunctionSignature := []byte("transfer(address,uint256)")
 
 	hash := sha3.NewLegacyKeccak256()
-	_, err = hash.Write(transferFunctionSignature)
+	_, err := hash.Write(transferFunctionSignature)
 
 	if err != nil {
 		return err
@@ -131,8 +129,10 @@ func (eth *Ethereum) SendToken(token string, address string, amount string) erro
 	data = append(data, common.LeftPadBytes(recipient.Bytes(), 32)...)
 	data = append(data, common.LeftPadBytes(tokenAmount.Bytes(), 32)...)
 
-	transaction := types.NewTransaction(nonce, tokenAddress, big.NewInt(0), erc20TransferGasLimit, gasPrice, data)
+	transaction := types.NewTransaction(eth.nonce, tokenAddress, big.NewInt(0), erc20TransferGasLimit, gasPrice, data)
 	transaction, err = eth.keystore.SignTx(eth.account, transaction, eth.chainID)
+
+	eth.nonce += 1
 
 	if err != nil {
 		return err
